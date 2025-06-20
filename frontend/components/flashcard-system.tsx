@@ -7,7 +7,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, Brain, Trophy, Target, MessageSquare, X as XIcon, Send } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Brain,
+  Trophy,
+  Target,
+  XIcon,
+  Send,
+  Sparkles,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Modal } from "@/components/ui/modal"
 import { useAccount } from "wagmi"
@@ -34,7 +46,17 @@ interface FlashcardSystemProps {
   onSkipQuiz?: () => void
 }
 
-export default function FlashcardSystem({ sessionId, topic, mode, cards, userName, onComplete, onExit, onFinishLearning, onSkipQuiz }: FlashcardSystemProps) {
+export default function FlashcardSystem({
+  sessionId,
+  topic,
+  mode,
+  cards,
+  userName,
+  onComplete,
+  onExit,
+  onFinishLearning,
+  onSkipQuiz,
+}: FlashcardSystemProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
   const [answers, setAnswers] = useState<number[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
@@ -63,7 +85,7 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
         localStorage.setItem(`flashcards_${sessionId}`, JSON.stringify(data))
       }
     } catch (error) {
-      console.error('Error updating time spent:', error)
+      console.error("Error updating time spent:", error)
     }
   }
 
@@ -158,7 +180,8 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
   }
 
   if (isCompleted) {
-    if (mode === "learning") {      return (
+    if (mode === "learning") {
+      return (
         <LearningComplete
           topic={topic}
           onQuiz={onFinishLearning || (() => router.push(`/quiz/${sessionId}`))}
@@ -190,29 +213,35 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
   }
 
   return (
-    <div className="min-h-screen bg-background text-text flex flex-col">
+    <div className="min-h-screen bg-[#0a0f0a] text-white flex flex-col">
       {/* Header */}
-      <div className="border-b border-primary/20 bg-background/80 backdrop-blur-sm sticky top-0 z-40">
+      <div className="border-b border-emerald-500/20 bg-[#0a0f0a]/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={onExit || (() => router.push("/dashboard"))}>
+              <Button
+                variant="ghost"
+                onClick={onExit || (() => router.push("/dashboard"))}
+                className="text-gray-300 hover:text-white hover:bg-emerald-500/10 transition-all duration-200"
+              >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <div>
-                <h1 className="text-lg font-semibold text-text">{topic}</h1>
-                <Badge className="bg-primary/20 text-primary">
+                <h1 className="text-lg font-semibold text-white">{topic}</h1>
+                <Badge
+                  className={`${mode === "learning" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"} transition-all duration-300`}
+                >
                   {mode === "learning" ? "Learning Mode" : "Quiz Mode"}
                 </Badge>
               </div>
             </div>
-            <div className="text-sm text-text/60">
+            <div className="text-sm text-gray-400 font-medium">
               {currentCardIndex + 1} of {cards.length}
             </div>
           </div>
           <div className="mt-4">
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-2 bg-gray-800/50" />
           </div>
         </div>
       </div>
@@ -221,7 +250,7 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-2xl">
           <Card
-            className="bg-[#0d2520] border-primary/20 min-h-[400px] cursor-grab active:cursor-grabbing"
+            className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 hover:border-emerald-500/30 min-h-[400px] cursor-grab active:cursor-grabbing transition-all duration-300 shadow-2xl backdrop-blur-sm"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -246,7 +275,7 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
               variant="outline"
               onClick={handlePrevious}
               disabled={currentCardIndex === 0}
-              className="border-primary/20 text-primary hover:bg-primary/10"
+              className="border-gray-600/50 text-gray-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
               Previous
@@ -256,8 +285,10 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
               {cards.map((_, index) => (
                 <div
                   key={index}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentCardIndex ? "bg-primary" : "bg-primary/20"
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentCardIndex
+                      ? "bg-emerald-400 scale-125 shadow-lg shadow-emerald-400/50"
+                      : "bg-gray-600/50 hover:bg-gray-500/70"
                   }`}
                 />
               ))}
@@ -266,7 +297,7 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
             <Button
               onClick={handleNext}
               disabled={mode === "quiz" && selectedAnswer === null}
-              className="bg-primary hover:bg-primary/90 text-background"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {isLastCard ? "Complete" : "Next"}
               <ChevronRight className="w-4 h-4 ml-2" />
@@ -274,7 +305,7 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
           </div>
 
           {/* Swipe Hint */}
-          <div className="text-center mt-4 text-text/40 text-sm">Swipe left or right to navigate</div>
+          <div className="text-center mt-4 text-gray-500 text-sm">Swipe left or right to navigate</div>
         </div>
       </div>
     </div>
@@ -282,58 +313,58 @@ export default function FlashcardSystem({ sessionId, topic, mode, cards, userNam
 }
 
 function LearningCard({ card }: { card: FlashcardData }) {
-  const [userQuestion, setUserQuestion] = useState("");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [showInput, setShowInput] = useState(false);
+  const [userQuestion, setUserQuestion] = useState("")
+  const [response, setResponse] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [showModal, setShowModal] = useState(false)
+  const [showInput, setShowInput] = useState(false)
 
   // Reset question box when card changes
   useEffect(() => {
-    setUserQuestion("");
-    setResponse("");
-    setError("");
-    setShowModal(false);
-    setShowInput(false);
-  }, [card.id]);
+    setUserQuestion("")
+    setResponse("")
+    setError("")
+    setShowModal(false)
+    setShowInput(false)
+  }, [card.id])
 
   const handleAsk = async () => {
-    if (!userQuestion.trim()) return;
-    setLoading(true);
-    setError("");
-    setResponse("");
+    if (!userQuestion.trim()) return
+    setLoading(true)
+    setError("")
+    setResponse("")
     try {
       const res = await fetch("/api/flashcard-ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: card.content, question: userQuestion }),
-      });
+      })
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to get response");
+        const err = await res.json()
+        throw new Error(err.error || "Failed to get response")
       }
-      const data = await res.json();
-      setResponse(data.response);
-      setShowModal(true);
-      setShowInput(false);
+      const data = await res.json()
+      setResponse(data.response)
+      setShowModal(true)
+      setShowInput(false)
     } catch (e: any) {
-      setError(e.message || "Failed to get response");
+      setError(e.message || "Failed to get response")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col h-full justify-between text-center space-y-6">
       <div>
-        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center mb-4 shadow border border-primary/20">
-          <Brain className="w-8 h-8 text-primary" />
+        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-500/20 to-cyan-400/20 rounded-full flex items-center justify-center mb-4 shadow-lg border border-emerald-500/30">
+          <Brain className="w-8 h-8 text-emerald-400" />
         </div>
-        <h2 className="text-3xl font-bold text-primary mb-4 break-words leading-tight tracking-tight">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4 break-words leading-tight tracking-tight">
           {card.title}
         </h2>
-        <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 mx-auto max-w-prose text-lg text-text/90 leading-relaxed whitespace-pre-line break-words shadow-sm">
+        <div className="bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 p-6 rounded-xl border border-emerald-500/20 mx-auto max-w-prose text-lg text-gray-200 leading-relaxed whitespace-pre-line break-words shadow-sm backdrop-blur-sm">
           {card.content}
         </div>
       </div>
@@ -343,7 +374,7 @@ function LearningCard({ card }: { card: FlashcardData }) {
           <Button
             size="sm"
             variant="ghost"
-            className="bg-primary/10 hover:bg-primary/20 text-primary shadow transition-transform duration-300 flex items-center whitespace-nowrap"
+            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 shadow-lg transition-all duration-300 hover:scale-105 flex items-center whitespace-nowrap border border-emerald-500/20 hover:border-emerald-500/30"
             onClick={() => setShowInput(true)}
             aria-label="Focus Mode"
           >
@@ -353,15 +384,17 @@ function LearningCard({ card }: { card: FlashcardData }) {
         )}
         {showInput && (
           <div className="w-full max-w-md animate-fade-in-slide-up mt-2">
-            <div className="bg-background border border-primary/20 rounded-lg shadow p-2 flex items-center gap-2">
+            <div className="bg-gradient-to-r from-gray-800/80 to-gray-700/50 border border-emerald-500/30 rounded-lg shadow-xl p-2 flex items-center gap-2 backdrop-blur-sm">
               <div className="relative flex-1">
                 <input
                   type="text"
-                  className="w-full p-3 pr-10 border-none bg-transparent text-text placeholder:text-primary/40 focus:outline-none text-base"
+                  className="w-full p-3 pr-10 border-none bg-transparent text-white placeholder:text-emerald-400/60 focus:outline-none text-base"
                   placeholder="Ask to expand, elaborate, or simplify..."
                   value={userQuestion}
-                  onChange={e => setUserQuestion(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAsk(); }}
+                  onChange={(e) => setUserQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAsk()
+                  }}
                   disabled={loading}
                   autoFocus
                 />
@@ -369,18 +402,22 @@ function LearningCard({ card }: { card: FlashcardData }) {
                   type="button"
                   onClick={handleAsk}
                   disabled={loading || !userQuestion.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-primary/80 hover:text-primary focus:outline-none transition-colors duration-200 disabled:opacity-50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-emerald-400/80 hover:text-emerald-400 focus:outline-none transition-colors duration-200 disabled:opacity-50 hover:scale-110"
                   aria-label="Send"
                 >
-                  <Send />
+                  <Send className="w-4 h-4" />
                 </button>
               </div>
               <Button
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="text-primary hover:bg-primary/10 focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                onClick={() => { setShowInput(false); setUserQuestion(""); setError(""); }}
+                className="text-gray-400 hover:text-white hover:bg-red-500/10 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all duration-200"
+                onClick={() => {
+                  setShowInput(false)
+                  setUserQuestion("")
+                  setError("")
+                }}
                 disabled={loading}
                 aria-label="Cancel"
               >
@@ -388,7 +425,7 @@ function LearningCard({ card }: { card: FlashcardData }) {
               </Button>
             </div>
             {error && (
-              <div className="w-full mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-red-500 text-sm text-left">
+              <div className="w-full mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm text-left backdrop-blur-sm">
                 {error}
               </div>
             )}
@@ -397,8 +434,14 @@ function LearningCard({ card }: { card: FlashcardData }) {
       </div>
       {/* AI Response Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="AI Response">
-        <div className="p-2 text-left">
-          <strong>AI:</strong> {response}
+        <div className="p-2 text-left text-gray-200">
+          <div className="flex items-start space-x-2">
+            <Sparkles className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <strong className="text-emerald-400">AI:</strong>
+              <span className="ml-2">{response}</span>
+            </div>
+          </div>
         </div>
       </Modal>
       <style jsx>{`
@@ -417,7 +460,7 @@ function LearningCard({ card }: { card: FlashcardData }) {
         }
       `}</style>
     </div>
-  );
+  )
 }
 
 function QuizCard({
@@ -434,31 +477,33 @@ function QuizCard({
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-accent/20 to-secondary/20 rounded-full flex items-center justify-center mb-4 shadow border border-accent/20">
-          <Target className="w-8 h-8 text-accent" />
+        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-500/20 to-purple-400/20 rounded-full flex items-center justify-center mb-4 shadow-lg border border-cyan-500/30">
+          <Target className="w-8 h-8 text-cyan-400" />
         </div>
-        <h2 className="text-2xl font-bold text-accent mb-6 break-words leading-tight tracking-tight">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-6 break-words leading-tight tracking-tight">
           {card.question}
         </h2>
       </div>
 
       <div className="space-y-3">
         {card.options?.map((option, index) => {
-          let buttonClass = "w-full p-4 text-left border rounded-lg transition-all duration-200 text-base font-medium break-words ";
+          let buttonClass =
+            "w-full p-4 text-left border rounded-lg transition-all duration-200 text-base font-medium break-words "
 
           if (showResult) {
             if (index === card.correctAnswer) {
-              buttonClass += "border-primary bg-primary/10 text-primary"
+              buttonClass += "border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-lg shadow-emerald-500/20"
             } else if (index === selectedAnswer && index !== card.correctAnswer) {
-              buttonClass += "border-red-500 bg-red-500/10 text-red-400"
+              buttonClass += "border-red-500 bg-red-500/10 text-red-400 shadow-lg shadow-red-500/20"
             } else {
-              buttonClass += "border-primary/20 text-text/60"
+              buttonClass += "border-gray-600/50 text-gray-400 bg-gray-800/30"
             }
           } else {
             if (index === selectedAnswer) {
-              buttonClass += "border-primary bg-primary/10 text-primary"
+              buttonClass += "border-cyan-500 bg-cyan-500/10 text-cyan-400 shadow-lg shadow-cyan-500/20"
             } else {
-              buttonClass += "border-primary/20 text-text hover:border-primary/40 hover:bg-primary/5"
+              buttonClass +=
+                "border-gray-600/50 text-gray-200 hover:border-cyan-500/40 hover:bg-cyan-500/5 bg-gray-800/30 hover:shadow-lg transition-all duration-200"
             }
           }
 
@@ -471,7 +516,7 @@ function QuizCard({
             >
               <div className="flex items-center justify-between">
                 <span>{option}</span>
-                {showResult && index === card.correctAnswer && <CheckCircle className="w-5 h-5 text-primary" />}
+                {showResult && index === card.correctAnswer && <CheckCircle className="w-5 h-5 text-emerald-400" />}
                 {showResult && index === selectedAnswer && index !== card.correctAnswer && (
                   <XCircle className="w-5 h-5 text-red-400" />
                 )}
@@ -482,10 +527,10 @@ function QuizCard({
       </div>
 
       {showResult && (
-        <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20 mt-4">
-          <p className="text-text/80 text-lg font-medium">
+        <div className="text-center p-4 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 rounded-lg border border-emerald-500/20 mt-4 backdrop-blur-sm">
+          <p className="text-gray-200 text-lg font-medium">
             {selectedAnswer === card.correctAnswer ? (
-              <span className="text-primary font-semibold">Correct! 🎉</span>
+              <span className="text-emerald-400 font-semibold">Correct! 🎉</span>
             ) : (
               <span className="text-red-400 font-semibold">Incorrect. The correct answer is highlighted above.</span>
             )}
@@ -506,24 +551,27 @@ function LearningComplete({
   onDashboard: () => void
 }) {
   return (
-    <div className="min-h-screen bg-background text-text flex items-center justify-center p-6">
-      <Card className="bg-[#0d2520] border-primary/20 max-w-md w-full">
+    <div className="min-h-screen bg-[#0a0f0a] text-white flex items-center justify-center p-6">
+      <Card className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 hover:border-emerald-500/30 max-w-md w-full shadow-2xl backdrop-blur-sm">
         <CardContent className="p-8 text-center space-y-6">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-            <CheckCircle className="w-10 h-10 text-primary" />
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-emerald-500/20 to-cyan-400/20 rounded-full flex items-center justify-center shadow-lg border border-emerald-500/30">
+            <CheckCircle className="w-10 h-10 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-text mb-2">Learning Complete!</h2>
-            <p className="text-text/60">You've finished learning about {topic}</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Learning Complete!</h2>
+            <p className="text-gray-300">You've finished learning about {topic}</p>
           </div>
           <div className="space-y-3">
-            <Button onClick={onQuiz} className="w-full bg-primary hover:bg-primary/90 text-background">
+            <Button
+              onClick={onQuiz}
+              className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg"
+            >
               ✅ Take Quiz Now
             </Button>
             <Button
               onClick={onDashboard}
               variant="outline"
-              className="w-full border-primary/20 text-primary hover:bg-primary/10"
+              className="w-full border-gray-600/50 text-gray-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200"
             >
               ❌ Maybe Later
             </Button>
@@ -562,15 +610,15 @@ function QuizComplete({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: userName, walletAddress, score }),
-      }).catch((err) => console.error("Failed to submit score:", err));
+      }).catch((err) => console.error("Failed to submit score:", err))
     }
     // Only run on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-primary"
-    if (score >= 60) return "text-accent"
+    if (score >= 80) return "text-emerald-400"
+    if (score >= 60) return "text-cyan-400"
     return "text-red-400"
   }
 
@@ -583,32 +631,35 @@ function QuizComplete({
   }
 
   return (
-    <div className="min-h-screen bg-background text-text flex items-center justify-center p-6">
-      <Card className="bg-[#0d2520] border-primary/20 max-w-md w-full">
+    <div className="min-h-screen bg-[#0a0f0a] text-white flex items-center justify-center p-6">
+      <Card className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 hover:border-cyan-500/30 max-w-md w-full shadow-2xl backdrop-blur-sm">
         <CardContent className="p-8 text-center space-y-6">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-accent/20 to-secondary/20 rounded-full flex items-center justify-center">
-            <Trophy className="w-10 h-10 text-accent" />
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-cyan-500/20 to-purple-400/20 rounded-full flex items-center justify-center shadow-lg border border-cyan-500/30">
+            <Trophy className="w-10 h-10 text-cyan-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-text mb-2">Quiz Complete!</h2>
-            <p className="text-text/60 mb-4">{topic}</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Quiz Complete!</h2>
+            <p className="text-gray-300 mb-4">{topic}</p>
             <div className={`text-4xl font-bold mb-2 ${getScoreColor(score)}`}>{score} points</div>
-            <p className="text-text/60 text-sm">
-              {answers.filter((answer, index) => answer === cards[index]?.correctAnswer).length} out of {totalCards}
+            <p className="text-gray-400 text-sm">
+              {answers.filter((answer, index) => answer === cards[index]?.correctAnswer).length} out of {totalCards}{" "}
               correct
             </p>
-            <p className="text-text/80 mt-2">{getScoreMessage(score)}</p>
+            <p className="text-gray-200 mt-2">{getScoreMessage(score)}</p>
           </div>
           <div className="space-y-3">
             <Button
               onClick={onRetry}
               variant="outline"
-              className="w-full border-primary/20 text-primary hover:bg-primary/10"
+              className="w-full border-gray-600/50 text-gray-300 hover:text-white hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all duration-200"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Retry Quiz
             </Button>
-            <Button onClick={onDashboard} className="w-full bg-primary hover:bg-primary/90 text-background">
+            <Button
+              onClick={onDashboard}
+              className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 shadow-lg"
+            >
               Back to Dashboard
             </Button>
           </div>
