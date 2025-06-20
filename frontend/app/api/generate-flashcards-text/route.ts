@@ -1,75 +1,93 @@
 import { NextRequest, NextResponse } from "next/server"
 import { spawn } from "child_process"
+import path from "path"
 
 export async function POST(request: NextRequest) {
   try {
-    const { text } = await request.json()
+    const { text, genre } = await request.json()
 
     if (!text) {
-      return NextResponse.json(
-        { error: "No text provided" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "No text provided" }, { status: 400 })
     }
 
-    console.log("Starting Python process for text processing...")
-    // Spawn the Python process with the correct path
-    const pythonProcess = spawn("python", ["../agent/flashcard_agent_text.py"])
+    const normalizedGenre = genre ? genre.toLowerCase().trim() : null
+    const scriptPath = path.join(process.cwd(), "..", "agent", "flashcard_agent_text.py")
+    console.log("Python script path:", scriptPath)
+    console.log("Text length:", text.length)
+    console.log("Genre:", normalizedGenre)
 
-    // Send the text to the Python script
-    pythonProcess.stdin.write(text + "\n")
-    pythonProcess.stdin.end()
+    return new Promise((resolve) => {
+      let outputData = ""
+      let errorData = ""
 
-    // Collect the output
-    let output = ""
-    let error = ""
+      const pythonProcess = spawn("python", [scriptPath])
 
-    pythonProcess.stdout.on("data", (data) => {
-      const chunk = data.toString()
-      console.log("Python stdout:", chunk)
-      output += chunk
-    })
+      pythonProcess.stdin.write(JSON.stringify({ text, genre: normalizedGenre }) + "\n")
+      pythonProcess.stdin.end()
 
-    pythonProcess.stderr.on("data", (data) => {
-      const chunk = data.toString()
-      console.error("Python stderr:", chunk)
-      error += chunk
-    })
+      pythonProcess.stdout.on("data", (data) => {
+        const chunk = data.toString()
+        console.log("Python stdout chunk:", chunk)
+        outputData += chunk
+      })
 
-    // Wait for the process to complete
-    await new Promise((resolve, reject) => {
+      pythonProcess.stderr.on("data", (data) => {
+        const chunk = data.toString()
+        console.error("Python stderr chunk:", chunk)
+        errorData += chunk
+      })
+
       pythonProcess.on("close", (code) => {
-        console.log(`Python process exited with code ${code}`)
-        if (code === 0) {
-          resolve(null)
-        } else {
-          reject(new Error(`Python process exited with code ${code}. Error: ${error}`))
+        console.log("Python process exited with code:", code)
+        console.log("Final output data:", outputData)
+        console.log("Final error data:", errorData)
+
+        if (code !== 0) {
+          console.error("Python script error:", errorData)
+          resolve(
+            NextResponse.json(
+              { error: "Failed to generate flashcards", details: errorData },
+              { status: 500 }
+            )
+          )
+          return
+        }
+
+        try {
+          const cleanOutput = outputData.trim()
+          const response = JSON.parse(cleanOutput)
+
+          if (response.error) {
+            resolve(
+              NextResponse.json(
+                { error: response.error, details: response.details },
+                { status: 500 }
+              )
+            )
+            return
+          }
+
+          if (!response.flashcards || !Array.isArray(response.flashcards)) {
+            throw new Error("Invalid flashcard data structure")
+          }
+
+          resolve(NextResponse.json(response))
+        } catch (error) {
+          console.error("Failed to parse Python output:", outputData)
+          resolve(
+            NextResponse.json(
+              { error: "Invalid response from flashcard generator", details: outputData },
+              { status: 500 }
+            )
+          )
         }
       })
     })
-
-    if (!output) {
-      throw new Error("No output received from Python process")
-    }
-
-    // Parse the output as JSON
-    try {
-      // Find the first occurrence of a JSON object in the output
-      const jsonMatch = output.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error("No JSON object found in output")
-      }
-      const flashcards = JSON.parse(jsonMatch[0])
-      return NextResponse.json(flashcards)
-    } catch (e) {
-      console.error("Failed to parse Python output as JSON:", output)
-      throw new Error("Invalid JSON response from Python process")
-    }
   } catch (error) {
-    console.error("Error generating flashcards from text:", error)
+    console.error("API route error:", error)
     return NextResponse.json(
-      { error: "Failed to generate flashcards from text", details: error.message },
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
-} 
+}

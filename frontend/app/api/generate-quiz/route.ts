@@ -13,10 +13,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Spawn the Python process with the correct path
-    const pythonProcess = spawn("python", ["../agent/quiz_agent.py"])
+    const pythonProcess = spawn("python", ["../agent/quiz_agent.py"], {
+      stdio: ["pipe", "pipe", "pipe"]
+    })
 
     // Send the flashcards JSON to the Python script
-    pythonProcess.stdin.write(JSON.stringify({ flashcards }) + "\n")
+    pythonProcess.stdin.write(Buffer.from(JSON.stringify({ flashcards }) + "\n", "utf-8"))
     pythonProcess.stdin.end()
 
     // Collect the output
@@ -24,13 +26,13 @@ export async function POST(request: NextRequest) {
     let error = ""
 
     pythonProcess.stdout.on("data", (data) => {
-      const chunk = data.toString()
+      const chunk = data.toString("utf-8")
       console.log("Python stdout:", chunk)
       output += chunk
     })
 
     pythonProcess.stderr.on("data", (data) => {
-      const chunk = data.toString()
+      const chunk = data.toString("utf-8")
       console.error("Python stderr:", chunk)
       error += chunk
     })
