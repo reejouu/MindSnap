@@ -36,7 +36,7 @@ const Navbar: React.FC<NavbarProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-text hover:bg-primary/10"
+              className="text-foreground hover:bg-primary/10"
             >
               <Menu className="w-5 h-5" />
             </Button>
@@ -54,7 +54,7 @@ const Navbar: React.FC<NavbarProps> = ({
               className={`capitalize ${
                 pathname === path
                   ? "bg-primary text-background"
-                  : "text-text hover:bg-primary/10"
+                  : "text-foreground hover:bg-primary/10"
               }`}
             >
               <Link href={path}>{tab}</Link>
