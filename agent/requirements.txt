@@ -1,0 +1,11 @@
+langchain>=0.1.17
+langchain-google-genai>=0.0.11
+google-generativeai>=0.4.0
+python-dotenv>=1.0.0
+yt_dlp>=2024.4.9
+PyPDF2>=3.0.1
+pydub>=0.25.1
+openai-whisper @ git+https://github.com/openai/whisper.git
+ffmpeg-python>=0.2.0
+pytesseract>=0.3.10
+Pillow>=9.0.0
