@@ -1,9 +1,8 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import { HeroHighlight, Highlight } from "@/components/hero-highlight";
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { HeroHighlight, Highlight } from "@/components/hero-highlight"
 import {
-  BookOpen,
-  Zap,
   Target,
   Brain,
   Sparkles,
@@ -16,444 +15,555 @@ import {
   EyeOff,
   PenTool,
   BarChart3,
-} from "lucide-react";
-import Navbar from "@/components/navbar";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-
+  Play,
+  Star,
+  Users,
+  CheckCircle,
+  ArrowDown,
+  Lightbulb,
+  Rocket,
+} from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import Navbar from "@/components/navbar"
+import { TypewriterEffect } from "@/components/ui/typewriter-effect"
 export default function MindSnapLanding() {
-  const [activeTab, setActiveTab] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showHero, setShowHero] = useState(false);
+  const [isVisible, setIsVisible] = useState(false)
+  const [activeFeature, setActiveFeature] = useState(0)
+  const[sidebarOpen, setSidebarOpen]=useState(false)
+  const featuresRef = useRef<HTMLDivElement>(null)
+  const statsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setShowHero(true);
-  }, []);
+    setIsVisible(true)
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-fade-in-up")
+          }
+        })
+      },
+      { threshold: 0.1 },
+    )
+
+    const elements = document.querySelectorAll(".scroll-animate")
+    elements.forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
 
   const features = [
-  {
-    icon: Upload, // icon for content input
-    title: "Upload Anything",
-    description: "Paste YouTube links, upload PDFs, or enter raw text — MindSnap turns it all into interactive learning.",
-  },
-  {
-    icon: Brain, // icon for AI processing
-    title: "AI-Generated SnapCards",
-    description: "Your content is broken into bite-sized, swipeable cards with cliffhangers, visuals, and quizzes.",
-  },
-  {
-    icon: EyeOff, // icon for focus or attention
-    title: "Attention Training Mode",
-    description: "Build real focus with distraction-free learning. The longer you stay, the more you earn.",
-  },
-  {
-    icon: PenTool, // quiz or test-based icon
-    title: "Quizzes That Stick",
-    description: "Quick, adaptive quizzes at the end of each SnapCard to boost retention and keep you engaged.",
-  },
-  {
-    icon: Trophy, // icon for gamification/rewards
-    title: "Earn Token Rewards",
-    description: "Climb the leaderboard and get rewarded with tokens for reading, quiz accuracy, and learning streaks.",
-  },
-  {
-    icon: BarChart3, // progress and analytics icon
-    title: "Track Your Progress",
-    description: "Monitor your learning stats, focus time, scores, and personalized topic recommendations in your dashboard.",
-  },
-];
+    {
+      icon: Upload,
+      title: "Smart Content Import",
+      description:
+        "Transform any content - YouTube videos, PDFs, articles, or raw text - into engaging learning experiences with our advanced AI processing.",
+      color: "from-blue-500 to-cyan-500",
+    },
+    {
+      icon: Brain,
+      title: "AI-Powered SnapCards",
+      description:
+        "Get personalized, bite-sized learning cards with interactive elements, visual aids, and progressive difficulty that adapts to your learning style.",
+      color: "from-purple-500 to-pink-500",
+    },
+    {
+      icon: EyeOff,
+      title: "Focus Training Mode",
+      description:
+        "Build laser-sharp concentration with our distraction-free environment. Track your focus time and earn rewards for sustained attention.",
+      color: "from-green-500 to-emerald-500",
+    },
+    {
+      icon: PenTool,
+      title: "Adaptive Quizzes",
+      description:
+        "Smart quizzes that evolve with your progress, targeting weak areas and reinforcing strengths for maximum retention and understanding.",
+      color: "from-orange-500 to-red-500",
+    },
+    {
+      icon: Trophy,
+      title: "Gamified Learning",
+      description:
+        "Climb leaderboards, earn achievement badges, and unlock rewards as you progress. Make learning addictive and fun.",
+      color: "from-yellow-500 to-orange-500",
+    },
+    {
+      icon: BarChart3,
+      title: "Advanced Analytics",
+      description:
+        "Deep insights into your learning patterns, progress tracking, and personalized recommendations to optimize your study sessions.",
+      color: "from-indigo-500 to-purple-500",
+    },
+  ]
 
+  const testimonials = [
+    {
+      name: "Sarah Chen",
+      role: "Medical Student",
+      content:
+        "MindSnap transformed how I study. I went from struggling with textbooks to acing my exams with 40% less study time.",
+      rating: 5,
+      avatar: "/placeholder.svg?height=40&width=40",
+    },
+    {
+      name: "Marcus Rodriguez",
+      role: "Software Engineer",
+      content:
+        "The AI-generated cards are incredibly smart. It's like having a personal tutor that knows exactly what I need to learn.",
+      rating: 5,
+      avatar: "/placeholder.svg?height=40&width=40",
+    },
+    {
+      name: "Emily Watson",
+      role: "MBA Student",
+      content:
+        "The gamification aspect keeps me motivated. I actually look forward to studying now - it's become addictive!",
+      rating: 5,
+      avatar: "/placeholder.svg?height=40&width=40",
+    },
+  ]
 
   return (
-    <div className="min-h-screen">
-      {/* Only render the rest of the page after showHero is true (client-side) */}
-      {showHero ? (
-        <>
-          <HeroHighlight>
-            {/* Navbar - fixed full width */}
-            <div className="fixed left-0 right-0 top-0 z-50">
-              <Navbar
-                sidebarOpen={sidebarOpen}
-                setSidebarOpen={setSidebarOpen}
-                showSidebarToggle={false}
-              />
+    <div className="min-h-screen bg-[#0a0f0a] text-white overflow-x-hidden">
+      <Navbar sidebarOpen={sidebarOpen}  setSidebarOpen={setSidebarOpen} showSidebarToggle={false}/>
+
+      {/* Hero Section */}
+      <HeroHighlight>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-8">
+          <div className="text-center space-y-8">
+            {/* Hero Badge */}
+            <div
+              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm text-emerald-400 font-medium">AI-Powered Learning Revolution</span>
             </div>
-            {/* Floating background elements */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-              <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-              <div
-                className="absolute top-3/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse"
-                style={{ animationDelay: "2s" }}
-              ></div>
-              <div
-                className="absolute top-1/2 left-1/2 w-64 h-64 bg-secondary/5 rounded-full blur-3xl animate-pulse"
-                style={{ animationDelay: "4s" }}
-              ></div>
+
+            {/* Main Headline */}
+            <div
+              className={`space-y-6 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            >
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight">
+                <span className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
+                  Learn Like You
+                </span>
+                <br />
+                
+                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    Binge Content
+                  </span>
+                
+              </h1>
+
+                <TypewriterEffect
+                words={[
+                  {
+                  text: "Transform",
+                  className: "text-emerald-400",
+                  },
+                  {
+                  text: "any",
+                  className: "text-cyan-400",
+                  },
+                  {
+                  text: "content",
+                  className: "text-emerald-400",
+                  },
+                  {
+                  text: "into",
+                  className: "text-cyan-400",
+                  },
+                  {
+                  text: "addictive,",
+                  className: "text-emerald-400",
+                  },
+                  {
+                  text: "bite-sized",
+                  className: "text-cyan-400",
+                  },
+                  {
+                  text: "learning",
+                  className: "text-emerald-400",
+                  },
+                  {
+                  text: "experiences.",
+                  className: "text-cyan-400",
+                  },
+                ]}
+                className="text-base text-gray-300 max-w-5xl mx-auto leading-relaxed"
+                />
+              <p>
+                <span className="text-2xl text-emerald-400 font-semibold"> Study smarter, not harder.</span>
+              </p>
             </div>
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto w-full scrollbar-hide">
-              <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center min-h-screen py-16">
-                {/* Left Content */}
-                <div className="space-y-10 relative">
-                  {/* Decorative elements */}
-                  <div className="absolute -top-8 -left-8 w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-xl animate-pulse"></div>
 
-                  <div className="space-y-8 relative z-10">
-                    <h2 className="text-5xl lg:text-8xl font-black leading-[0.9] tracking-tight">
-                      <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent animate-gradient bg-300% relative">
-                        Learn fast,
-                        <br />
-                        stay{" "}
-                      </span>
-                      <Highlight className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 relative">
-                        <span className="relative z-10">curious</span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg blur-sm"></div>
-                      </Highlight>
-                    </h2>
+            {/* CTA Buttons */}
+            <div
+              className={`flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-1000 delay-400 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            >
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold px-8 py-4 text-lg rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 group"
+              >
+                Start Learning Free
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
 
-                    <div className="space-y-4">
-                      <p className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-text to-text/70 bg-clip-text text-transparent">
-                        Binge knowledge like you binge reels.
-                      </p>
-                      <p className="text-lg text-text/60 max-w-lg leading-relaxed">
-                        Transform your learning experience with AI-powered
-                        flashcards that adapt to your pace and style.
-                      </p>
-                    </div>
-                  </div>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10 font-semibold px-8 py-4 text-lg rounded-2xl group"
+              >
+                <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
+                Watch Demo
+              </Button>
+            </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 relative z-10">
-                    <Button
-                      asChild
-                      size="lg"
-                      className="bg-gradient-to-r from-primary via-accent to-secondary hover:from-primary/90 hover:via-accent/90 hover:to-secondary/90 text-white font-bold px-10 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-primary/25 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 group relative overflow-hidden"
-                    >
-                      <Link href="/dashboard">
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <span className="relative z-10 flex items-center">
-                        Get Started Free
-                        <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
-                      </span>
-                      </Link>
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="border-2 border-primary/30 hover:border-primary/60 text-primary hover:text-primary/80 font-semibold px-8 py-6 text-lg rounded-2xl backdrop-blur-sm hover:bg-primary/5 transition-all duration-300 group"
-                    >
-                      <span className="flex items-center">
-                      Watch Demo
-                      <div className="ml-2 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                      </span>
-                    </Button>
-                  </div>
-
-                  {/* Stats or features */}
-                  <div className="flex items-center gap-8 pt-8">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">10K+</div>
-                      <div className="text-sm text-text/60">Active Learners</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-accent">95%</div>
-                      <div className="text-sm text-text/60">Retention Rate</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary">
-                        4.9★
-                      </div>
-                      <div className="text-sm text-text/60">User Rating</div>
-                    </div>
-                  </div>
+            {/* Stats */}
+            <div
+              className={`grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-16 transition-all duration-1000 delay-600 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            >
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  50K+
                 </div>
-
-                {/* Right Content - Enhanced Visual */}
-                <div className="flex justify-center lg:justify-end relative mt-[-2rem] lg:mt-[-3rem]">
-                  <div className="relative">
-                    {/* Outer glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-full blur-3xl scale-110 animate-pulse"></div>
-
-                    {/* Main circular container */}
-                    <div className="w-96 h-96 lg:w-[28rem] lg:h-[28rem] rounded-full bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 backdrop-blur-xl border-2 border-primary/20 flex items-center justify-center relative overflow-hidden shadow-2xl">
-                      {/* Animated background rings */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 animate-pulse"></div>
-                      <div
-                        className="absolute inset-6 rounded-full border-2 border-primary/30 shadow-inner"
-                        style={{
-                          animation: "spin 30s linear infinite",
-                        }}
-                      ></div>
-                      <div
-                        className="absolute inset-12 rounded-full border border-accent/20"
-                        style={{
-                          animation: "spin 20s linear infinite reverse",
-                        }}
-                      ></div>
-                      <div
-                        className="absolute inset-16 rounded-full border border-secondary/15"
-                        style={{
-                          animation: "spin 25s linear infinite",
-                        }}
-                      ></div>
-
-                      {/* Central content */}
-                      <div className="relative z-10 flex flex-col items-center justify-center space-y-8">
-                        {/* Main brain/learning icon */}
-                        <div className="relative group">
-                          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 flex items-center justify-center shadow-2xl backdrop-blur-sm border border-primary/30 group-hover:scale-110 transition-transform duration-500">
-                            <Brain className="w-16 h-16 text-primary drop-shadow-lg" />
-                          </div>
-                          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-accent to-secondary rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                            <Sparkles className="w-4 h-4 text-white" />
-                          </div>
-                          {/* Pulsing ring */}
-                          <div className="absolute inset-0 rounded-full border-2 border-primary/50 animate-ping"></div>
-                        </div>
-
-                        {/* Surrounding learning elements */}
-                        <div className="flex space-x-12">
-                          <div
-                            className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center shadow-xl backdrop-blur-sm border border-primary/30 hover:scale-110 transition-all duration-300 cursor-pointer group"
-                            style={{
-                              animation: "float 3s ease-in-out infinite",
-                              animationDelay: "0s",
-                            }}
-                          >
-                            <BookOpen className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
-                          </div>
-                          <div
-                            className="w-16 h-16 rounded-full bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center shadow-xl backdrop-blur-sm border border-accent/30 hover:scale-110 transition-all duration-300 cursor-pointer group"
-                            style={{
-                              animation: "float 3s ease-in-out infinite",
-                              animationDelay: "1s",
-                            }}
-                          >
-                            <Target className="w-8 h-8 text-accent group-hover:scale-110 transition-transform" />
-                          </div>
-                          <div
-                            className="w-16 h-16 rounded-full bg-gradient-to-br from-secondary/30 to-secondary/10 flex items-center justify-center shadow-xl backdrop-blur-sm border border-secondary/30 hover:scale-110 transition-all duration-300 cursor-pointer group"
-                            style={{
-                              animation: "float 3s ease-in-out infinite",
-                              animationDelay: "2s",
-                            }}
-                          >
-                            <Zap className="w-8 h-8 text-secondary group-hover:scale-110 transition-transform" />
-                          </div>
-                        </div>
-
-                        {/* Enhanced text labels */}
-                        <div className="text-center space-y-2">
-                          <div className="text-primary font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                            AI-Powered
-                          </div>
-                          <div className="text-text/70 text-base font-medium">
-                            Learning Cards
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enhanced floating decorative elements */}
-                    <div
-                      className="absolute -top-4 -right-8 w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-full opacity-80 shadow-lg"
-                      style={{
-                        animation: "float 4s ease-in-out infinite",
-                        animationDelay: "0s",
-                      }}
-                    ></div>
-                    <div
-                      className="absolute -bottom-12 -left-12 w-10 h-10 bg-gradient-to-r from-accent to-secondary rounded-full opacity-80 shadow-lg"
-                      style={{
-                        animation: "float 4s ease-in-out infinite",
-                        animationDelay: "2s",
-                      }}
-                    ></div>
-                    <div
-                      className="absolute top-1/4 -left-16 w-8 h-8 bg-gradient-to-r from-secondary to-primary rounded-full opacity-70 shadow-lg"
-                      style={{
-                        animation: "float 4s ease-in-out infinite",
-                        animationDelay: "3s",
-                      }}
-                    ></div>
-                    <div
-                      className="absolute top-3/4 -right-12 w-6 h-6 bg-gradient-to-r from-primary to-secondary rounded-full opacity-60 shadow-lg"
-                      style={{
-                        animation: "float 4s ease-in-out infinite",
-                        animationDelay: "1s",
-                      }}
-                    ></div>
-
-                    {/* Additional sparkle effects */}
-                    <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-primary rounded-full animate-ping opacity-75"></div>
-                    <div
-                      className="absolute bottom-1/3 left-1/4 w-2 h-2 bg-accent rounded-full animate-ping opacity-75"
-                      style={{ animationDelay: "1s" }}
-                    ></div>
-                    <div
-                      className="absolute top-2/3 right-1/3 w-2 h-2 bg-secondary rounded-full animate-ping opacity-75"
-                      style={{ animationDelay: "2s" }}
-                    ></div>
-                  </div>
+                <div className="text-gray-400 text-sm">Active Learners</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  98%
                 </div>
+                <div className="text-gray-400 text-sm">Success Rate</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  4.9★
+                </div>
+                <div className="text-gray-400 text-sm">User Rating</div>
               </div>
             </div>
-          </HeroHighlight>
-          {/* Features Section */}
-          <section className="py-24 bg-gradient-to-b from-background to-background/50">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
-              <div className="text-center mb-16">
-                <h3 className="text-4xl lg:text-5xl font-bold mb-6">
-                  <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-                    Why Choose MindSnap?
-                  </span>
+
+            {/* Scroll Indicator */}
+            <div className="pt-16">
+              <div className="flex flex-col items-center space-y-2 animate-bounce">
+                <span className="text-gray-400 text-sm">Discover More</span>
+                <ArrowDown className="w-5 h-5 text-emerald-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </HeroHighlight>
+
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-gradient-to-b from-[#0a0f0a] to-[#0f1410]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-20 scroll-animate">
+            <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
+              <Lightbulb className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm text-emerald-400 font-medium">Powerful Features</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Everything You Need to
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                Master Any Subject
+              </span>
+            </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              Our AI-powered platform combines cutting-edge technology with proven learning science to create the
+              ultimate study experience.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8" ref={featuresRef}>
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className={`scroll-animate group p-8 rounded-3xl bg-gradient-to-br from-gray-900/50 to-gray-800/30 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/30 transition-all duration-500 hover:scale-105 hover:-translate-y-2 cursor-pointer`}
+                style={{ animationDelay: `${index * 100}ms` }}
+                onMouseEnter={() => setActiveFeature(index)}
+              >
+                <div
+                  className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}
+                >
+                  <feature.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-white group-hover:text-emerald-400 transition-colors">
+                  {feature.title}
                 </h3>
-                <p className="text-xl text-text/70 max-w-3xl mx-auto">
-                  Experience the future of learning with our cutting-edge features designed to maximize your potential
+                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                  {feature.description}
                 </p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {features.map((feature, index) => (
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-24 bg-gradient-to-b from-[#0f1410] to-[#0a0f0a]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-20 scroll-animate">
+            <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+              <Rocket className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm text-cyan-400 font-medium">Simple Process</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Get Started in
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                3 Simple Steps
+              </span>
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              {
+                step: "01",
+                title: "Upload Content",
+                description: "Paste a YouTube link, upload a PDF, or enter any text you want to learn from.",
+                icon: Upload,
+                color: "from-emerald-500 to-cyan-500",
+              },
+              {
+                step: "02",
+                title: "AI Processing",
+                description: "Our advanced AI breaks down your content into engaging, bite-sized learning cards.",
+                icon: Brain,
+                color: "from-cyan-500 to-blue-500",
+              },
+              {
+                step: "03",
+                title: "Start Learning",
+                description: "Swipe through cards, take quizzes, and track your progress as you master the material.",
+                icon: Target,
+                color: "from-blue-500 to-purple-500",
+              },
+            ].map((step, index) => (
+              <div
+                key={index}
+                className="scroll-animate text-center group"
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
+                <div className="relative mb-8">
+                  <div
+                    className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-r ${step.color} flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <step.icon className="w-10 h-10 text-white" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg">
+                    {step.step}
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-white group-hover:text-emerald-400 transition-colors">
+                  {step.title}
+                </h3>
+                <p className="text-gray-400 leading-relaxed max-w-sm mx-auto">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-24 bg-gradient-to-b from-[#0a0f0a] to-[#0f1410]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-20 scroll-animate">
+            <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6">
+              <Users className="w-4 h-4 text-purple-400" />
+              <span className="text-sm text-purple-400 font-medium">Success Stories</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Loved by Students
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                Worldwide
+              </span>
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div
+                key={index}
+                className="scroll-animate p-8 rounded-3xl bg-gradient-to-br from-gray-900/50 to-gray-800/30 backdrop-blur-sm border border-gray-700/30 hover:border-purple-500/30 transition-all duration-500 hover:scale-105"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <div className="flex items-center mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-300 mb-6 leading-relaxed">"{testimonial.content}"</p>
+                <div className="flex items-center">
+                  <img
+                    src={testimonial.avatar || "/placeholder.svg"}
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full mr-4"
+                  />
+                  <div>
+                    <div className="font-semibold text-white">{testimonial.name}</div>
+                    <div className="text-gray-400 text-sm">{testimonial.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-gradient-to-r from-emerald-900/20 via-cyan-900/20 to-emerald-900/20">
+        <div className="max-w-4xl mx-auto text-center px-6 lg:px-8">
+          <div className="scroll-animate">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Ready to Transform
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                Your Learning?
+              </span>
+            </h2>
+            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+              Join thousands of students who've already revolutionized their study habits with MindSnap.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold px-10 py-4 text-xl rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 group"
+              >
+                Start Free Trial
+                <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <div className="flex items-center space-x-2 text-gray-400">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span>No credit card required</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gradient-to-t from-[#0a0f0a] to-[#0f1410] border-t border-gray-800/50">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+          <div className="grid md:grid-cols-4 gap-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  MindSnap
+                </span>
+              </div>
+              <p className="text-gray-400 max-w-sm">
+                Revolutionizing education through AI-powered learning experiences that make studying addictive and
+                effective.
+              </p>
+              <div className="flex space-x-4">
+                {[Twitter, Github, Linkedin].map((Icon, index) => (
                   <div
                     key={index}
-                    className="group p-8 rounded-2xl bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm border border-primary/10 hover:border-primary/30 transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                    className="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-emerald-500/20 flex items-center justify-center cursor-pointer transition-colors group"
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                      <feature.icon className="w-8 h-8 text-primary" />
-                    </div>
-                    <h4 className="text-xl font-bold mb-4 text-text">{feature.title}</h4>
-                    <p className="text-text/70 leading-relaxed">{feature.description}</p>
+                    <Icon className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
                   </div>
                 ))}
               </div>
             </div>
-          </section>
 
-          {/* Footer */}
-          <footer className="bg-gradient-to-t from-background/95 to-background/80 backdrop-blur-sm border-t border-primary/10">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-              <div className="grid md:grid-cols-4 gap-8">
-                {/* Brand */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-primary to-accent flex items-center justify-center">
-                      <Brain className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      MindSnap
-                    </span>
-                  </div>
-                  <p className="text-text/70 max-w-sm">
-                    Revolutionizing learning through AI-powered flashcards and adaptive learning techniques.
-                  </p>
-                  <div className="flex space-x-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center cursor-pointer transition-colors">
-                      <Twitter className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center cursor-pointer transition-colors">
-                      <Github className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center cursor-pointer transition-colors">
-                      <Linkedin className="w-5 h-5 text-primary" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product */}
-                <div>
-                  <h5 className="font-semibold text-text mb-4">Product</h5>
-                  <ul className="space-y-2 text-text/70">
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Features
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Pricing
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        API
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Integrations
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Company */}
-                <div>
-                  <h5 className="font-semibold text-text mb-4">Company</h5>
-                  <ul className="space-y-2 text-text/70">
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        About
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Blog
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Careers
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Contact
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Support */}
-                <div>
-                  <h5 className="font-semibold text-text mb-4">Support</h5>
-                  <ul className="space-y-2 text-text/70">
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Help Center
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Community
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Privacy
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-primary transition-colors">
-                        Terms
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="border-t border-primary/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p className="text-text/60 text-sm">© 2024 MindSnap. All rights reserved.</p>
-                <div className="flex items-center space-x-4 mt-4 md:mt-0">
-                  <span className="text-text/60 text-sm">Made with</span>
-                  <div className="w-4 h-4 bg-gradient-to-r from-red-500 to-pink-500 rounded-full animate-pulse"></div>
-                  <span className="text-text/60 text-sm">for learners worldwide</span>
-                </div>
-              </div>
+            {/* Product */}
+            <div>
+              <h5 className="font-semibold text-white mb-4">Product</h5>
+              <ul className="space-y-2 text-gray-400">
+                {["Features", "Pricing", "API", "Integrations"].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="hover:text-emerald-400 transition-colors">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </footer>
-        </>
-      ) : null}
+
+            {/* Company */}
+            <div>
+              <h5 className="font-semibold text-white mb-4">Company</h5>
+              <ul className="space-y-2 text-gray-400">
+                {["About", "Blog", "Careers", "Contact"].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="hover:text-emerald-400 transition-colors">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h5 className="font-semibold text-white mb-4">Support</h5>
+              <ul className="space-y-2 text-gray-400">
+                {["Help Center", "Community", "Privacy", "Terms"].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="hover:text-emerald-400 transition-colors">
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-500 text-sm">© 2025 MindSnap. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      <style jsx global>{`
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fade-in-up 0.6s ease-out forwards;
+        }
+        
+        .scroll-animate {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: all 0.6s ease-out;
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
-  );
+  )
 }

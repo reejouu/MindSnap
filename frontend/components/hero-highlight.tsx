@@ -15,15 +15,10 @@ export const HeroHighlight = ({
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
 
-  // Updated SVG patterns with custom colors
   const dotPatterns = {
-    light: {
-      default: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='16' height='16' fill='none'%3E%3Ccircle fill='%2396e5d1' opacity='0.3' id='pattern-circle' cx='10' cy='10' r='2.5'%3E%3C/circle%3E%3C/svg%3E")`,
-      hover: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='16' height='16' fill='none'%3E%3Ccircle fill='%23d4a951' id='pattern-circle' cx='10' cy='10' r='2.5'%3E%3C/circle%3E%3C/svg%3E")`,
-    },
     dark: {
-      default: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='16' height='16' fill='none'%3E%3Ccircle fill='%2396e5d1' opacity='0.2' id='pattern-circle' cx='10' cy='10' r='2.5'%3E%3C/circle%3E%3C/svg%3E")`,
-      hover: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='16' height='16' fill='none'%3E%3Ccircle fill='%23d4a951' id='pattern-circle' cx='10' cy='10' r='2.5'%3E%3C/circle%3E%3C/svg%3E")`,
+      default: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='16' height='16' fill='none'%3E%3Ccircle fill='%2310b981' opacity='0.15' id='pattern-circle' cx='10' cy='10' r='2.5'%3E%3C/circle%3E%3C/svg%3E")`,
+      hover: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='16' height='16' fill='none'%3E%3Ccircle fill='%2306b6d4' id='pattern-circle' cx='10' cy='10' r='2.5'%3E%3C/circle%3E%3C/svg%3E")`,
     },
   }
 
@@ -39,7 +34,7 @@ export const HeroHighlight = ({
     <div
       className={cn(
         "group relative flex min-h-screen w-full items-center justify-center",
-        "bg-[#061712]", // Custom background color
+        "bg-[#0a0f0a]",
         containerClassName,
       )}
       onMouseMove={handleMouseMove}
@@ -56,14 +51,14 @@ export const HeroHighlight = ({
           backgroundImage: dotPatterns.dark.hover,
           WebkitMaskImage: useMotionTemplate`
             radial-gradient(
-              200px circle at ${mouseX}px ${mouseY}px,
+              300px circle at ${mouseX}px ${mouseY}px,
               black 0%,
               transparent 100%
             )
           `,
           maskImage: useMotionTemplate`
             radial-gradient(
-              200px circle at ${mouseX}px ${mouseY}px,
+              300px circle at ${mouseX}px ${mouseY}px,
               black 0%,
               transparent 100%
             )
@@ -102,7 +97,7 @@ export const Highlight = ({
         display: "inline",
       }}
       className={cn(
-        `relative inline-block rounded-lg bg-gradient-to-r from-primary/30 to-accent/30 px-1 pb-1`,
+        `relative inline-block rounded-lg bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 px-1 pb-1`,
         className,
       )}
     >

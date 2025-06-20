@@ -23,20 +23,19 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        background: "#0a0f0a",
         foreground: "hsl(var(--foreground))",
-        text: "#e8f9f4",
-        background: "#061712",
         primary: {
-          DEFAULT: "#96e5d1",
-          foreground: "#061712",
+          DEFAULT: "#10b981",
+          foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "#872143",
-          foreground: "#e8f9f4",
+          DEFAULT: "#06b6d4",
+          foreground: "#ffffff",
         },
         accent: {
-          DEFAULT: "#d4a951",
-          foreground: "#061712",
+          DEFAULT: "#8b5cf6",
+          foreground: "#ffffff",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -69,10 +68,24 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        gradient: {
+          "0%, 100%": {
+            "background-size": "200% 200%",
+            "background-position": "left center",
+          },
+          "50%": {
+            "background-size": "200% 200%",
+            "background-position": "right center",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        gradient: "gradient 3s ease infinite",
+      },
+      backgroundSize: {
+        "300%": "300%",
       },
     },
   },
