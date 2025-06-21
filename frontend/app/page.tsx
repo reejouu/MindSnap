@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { HeroHighlight, Highlight } from "@/components/hero-highlight"
+import { HeroHighlight } from "@/components/hero-highlight"
 import {
   Target,
   Brain,
@@ -15,7 +15,6 @@ import {
   EyeOff,
   PenTool,
   BarChart3,
-  Play,
   Star,
   Users,
   CheckCircle,
@@ -27,10 +26,12 @@ import { User } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Navbar from "@/components/navbar"
 import { TypewriterEffect } from "@/components/ui/typewriter-effect"
+import GradientButton from "@/components/gradient-button"
+
 export default function MindSnapLanding() {
   const [isVisible, setIsVisible] = useState(false)
   const [activeFeature, setActiveFeature] = useState(0)
-  const[sidebarOpen, setSidebarOpen]=useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const featuresRef = useRef<HTMLDivElement>(null)
   const statsRef = useRef<HTMLDivElement>(null)
 
@@ -128,7 +129,7 @@ export default function MindSnapLanding() {
 
   return (
     <div className="min-h-screen bg-[#0a0f0a] text-white overflow-x-hidden">
-      <Navbar sidebarOpen={sidebarOpen}  setSidebarOpen={setSidebarOpen} showSidebarToggle={false}/>
+      <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} showSidebarToggle={false} />
 
       {/* Hero Section */}
       <HeroHighlight>
@@ -151,50 +152,49 @@ export default function MindSnapLanding() {
                   Learn Like You
                 </span>
                 <br />
-                
-                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                    Binge Content
-                  </span>
-                
+
+                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  Binge Content
+                </span>
               </h1>
 
-                <TypewriterEffect
+              <TypewriterEffect
                 words={[
                   {
-                  text: "Transform",
-                  className: "text-emerald-400",
+                    text: "Transform",
+                    className: "text-emerald-400",
                   },
                   {
-                  text: "any",
-                  className: "text-cyan-400",
+                    text: "any",
+                    className: "text-cyan-400",
                   },
                   {
-                  text: "content",
-                  className: "text-emerald-400",
+                    text: "content",
+                    className: "text-emerald-400",
                   },
                   {
-                  text: "into",
-                  className: "text-cyan-400",
+                    text: "into",
+                    className: "text-cyan-400",
                   },
                   {
-                  text: "addictive,",
-                  className: "text-emerald-400",
+                    text: "addictive,",
+                    className: "text-emerald-400",
                   },
                   {
-                  text: "bite-sized",
-                  className: "text-cyan-400",
+                    text: "bite-sized",
+                    className: "text-cyan-400",
                   },
                   {
-                  text: "learning",
-                  className: "text-emerald-400",
+                    text: "learning",
+                    className: "text-emerald-400",
                   },
                   {
-                  text: "experiences.",
-                  className: "text-cyan-400",
+                    text: "experiences.",
+                    className: "text-cyan-400",
                   },
                 ]}
                 className="text-base text-gray-300 max-w-5xl mx-auto leading-relaxed"
-                />
+              />
               <p>
                 <span className="text-2xl text-emerald-400 font-semibold"> Study smarter, not harder.</span>
               </p>
@@ -212,14 +212,7 @@ export default function MindSnapLanding() {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10 font-semibold px-8 py-4 text-lg rounded-2xl group"
-              >
-                <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-                Watch Demo
-              </Button>
+              <GradientButton onClick={() => console.log("Watch demo clicked")}>Watch Demo</GradientButton>
             </div>
 
             {/* Stats */}
@@ -408,7 +401,7 @@ export default function MindSnapLanding() {
                 <div className="flex items-center">
                   {testimonial.avatar ? (
                     <img
-                      src={testimonial.avatar}
+                      src={testimonial.avatar || "/placeholder.svg"}
                       alt={testimonial.name}
                       className="w-12 h-12 rounded-full mr-4"
                     />

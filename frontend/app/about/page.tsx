@@ -101,8 +101,8 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: "Sayan Adhikary",
-      role: "Team Lead & Web3 Developer",
+      name: "Sayan Adhikary (Team Lead)",
+      role: "Fullstack & Blockchain Developer",
       avatar: "🧠",
       skills: ["Web3", "Product Strategy", "Leadership"],
       social: {
@@ -114,7 +114,7 @@ export default function AboutPage() {
     },
     {
       name: "Devayanee Gupta",
-      role: "AI Whisperer",
+      role: "Backend Developer",
       avatar: "⚡",
       skills: ["AI Integration", "System Design"],
       social: {
@@ -126,9 +126,9 @@ export default function AboutPage() {
     },
     {
       name: "Sanchayan Khan",
-      role: "Full Stack Developer",
+      role: "Frontend Developer",
       avatar: "🎨",
-      skills: ["UX/UI Design", "User Research", "Prototyping"],
+      skills: ["UX/UI Design",  "Prototyping"],
       social: {
         linkedin: "#",
         twitter: "#",
@@ -140,7 +140,7 @@ export default function AboutPage() {
       name: "Kaniska Mitra",
       role: "Frontend Developer",
       avatar: "📚",
-      skills: ["UI/UX", "Research", "Curriculum"],
+      skills: ["UI/UX", "Research"],
       social: {
         linkedin: "#",
         twitter: "#",

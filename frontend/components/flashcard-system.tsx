@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { motion, type PanInfo, useMotionValue, useTransform } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -46,6 +45,11 @@ interface FlashcardSystemProps {
   onSkipQuiz?: () => void
 }
 
+const DRAG_BUFFER = 50
+const VELOCITY_THRESHOLD = 500
+const GAP = 20
+const SPRING_OPTIONS = { type: "spring", stiffness: 300, damping: 30 }
+
 export default function FlashcardSystem({
   sessionId,
   topic,
@@ -66,9 +70,31 @@ export default function FlashcardSystem({
   const router = useRouter()
   const { address: walletAddress } = useAccount()
 
+  // Carousel specific state
+  const x = useMotionValue(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const baseWidth = 600
+  const containerPadding = 20
+  const itemWidth = baseWidth - containerPadding * 2
+  const trackItemOffset = itemWidth + GAP
+
   const currentCard = cards[currentCardIndex]
   const progress = ((currentCardIndex + 1) / cards.length) * 100
   const isLastCard = currentCardIndex === cards.length - 1
+
+  // Precompute all rotateY transforms at the top level, never in a loop or function
+  const rotateYTransforms = cards.map((_, index) =>
+    useTransform(
+      x,
+      [
+        -(index + 1) * trackItemOffset,
+        -index * trackItemOffset,
+        -(index - 1) * trackItemOffset,
+      ],
+      [45, 0, -45],
+      { clamp: false }
+    )
+  )
 
   // Function to update time spent in localStorage
   const updateTimeSpent = (timeSpent: number) => {
@@ -76,11 +102,9 @@ export default function FlashcardSystem({
       const storedData = localStorage.getItem(`flashcards_${sessionId}`)
       if (storedData) {
         const data = JSON.parse(storedData)
-        // Update the current card's time spent
         if (data.cards && data.cards[currentCardIndex]) {
           data.cards[currentCardIndex].timeSpent = (data.cards[currentCardIndex].timeSpent || 0) + timeSpent
         }
-        // Update the total time spent for the session
         data.timeSpent = (data.timeSpent || 0) + timeSpent
         localStorage.setItem(`flashcards_${sessionId}`, JSON.stringify(data))
       }
@@ -144,38 +168,20 @@ export default function FlashcardSystem({
     return Math.round((correct / cards.length) * 100)
   }
 
-  const handleSwipe = (direction: "left" | "right") => {
-    if (direction === "right" && !isLastCard) {
-      handleNext()
-    } else if (direction === "left" && currentCardIndex > 0) {
-      handlePrevious()
-    }
-  }
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo): void => {
+    const offset = info.offset.x
+    const velocity = info.velocity.x
 
-  // Touch/swipe handlers
-  const [touchStart, setTouchStart] = useState<number | null>(null)
-  const [touchEnd, setTouchEnd] = useState<number | null>(null)
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientX)
-  }
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > 50
-    const isRightSwipe = distance < -50
-
-    if (isLeftSwipe) {
-      handleSwipe("right")
-    }
-    if (isRightSwipe) {
-      handleSwipe("left")
+    if (offset < -DRAG_BUFFER || velocity < -VELOCITY_THRESHOLD) {
+      // Swipe left - go to next card
+      if (!isLastCard) {
+        handleNext()
+      }
+    } else if (offset > DRAG_BUFFER || velocity > VELOCITY_THRESHOLD) {
+      // Swipe right - go to previous card
+      if (currentCardIndex > 0) {
+        handlePrevious()
+      }
     }
   }
 
@@ -246,28 +252,96 @@ export default function FlashcardSystem({
         </div>
       </div>
 
-      {/* Flashcard */}
+      {/* Flashcard Carousel */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl">
-          <Card
-            className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 hover:border-emerald-500/30 min-h-[400px] cursor-grab active:cursor-grabbing transition-all duration-300 shadow-2xl backdrop-blur-sm"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
+        <div className="w-full max-w-4xl">
+          <div
+            ref={containerRef}
+            className="relative overflow-hidden rounded-[24px] border border-emerald-500/20 bg-gradient-to-br from-gray-900/50 to-gray-800/30 backdrop-blur-sm"
+            style={{
+              width: `${baseWidth}px`,
+              height: "500px",
+              margin: "0 auto",
+            }}
           >
-            <CardContent className="p-8 h-full flex flex-col justify-center">
-              {mode === "learning" ? (
-                <LearningCard card={currentCard} />
-              ) : (
-                <QuizCard
-                  card={currentCard}
-                  selectedAnswer={selectedAnswer}
-                  showResult={showResult}
-                  onAnswerSelect={handleAnswerSelect}
-                />
-              )}
-            </CardContent>
-          </Card>
+            <motion.div
+              className="flex h-full"
+              drag="x"
+              dragConstraints={{
+                left: -trackItemOffset * (cards.length - 1),
+                right: 0,
+              }}
+              style={{
+                width: itemWidth,
+                gap: `${GAP}px`,
+                perspective: 1000,
+                perspectiveOrigin: `${currentCardIndex * trackItemOffset + itemWidth / 2}px 50%`,
+                x,
+              }}
+              onDragEnd={handleDragEnd}
+              animate={{ x: -(currentCardIndex * trackItemOffset) }}
+              transition={SPRING_OPTIONS}
+            >
+              {cards.map((card, index) => {
+                const isActive = index === currentCardIndex
+                const rotateY = rotateYTransforms[index]
+                return (
+                  <motion.div
+                    key={card.id}
+                    className="relative shrink-0 flex flex-col bg-gradient-to-br from-gray-900/95 to-gray-800/90 border-2 border-gray-600/50 rounded-[16px] overflow-hidden cursor-grab active:cursor-grabbing shadow-2xl backdrop-blur-sm"
+                    style={{
+                      width: itemWidth,
+                      height: "100%",
+                      rotateY: rotateY,
+                      borderColor: isActive
+                        ? mode === "learning"
+                          ? "rgba(16, 185, 129, 0.5)"
+                          : "rgba(6, 182, 212, 0.5)"
+                        : "rgba(75, 85, 99, 0.5)",
+                    }}
+                    transition={SPRING_OPTIONS}
+                  >
+                    <div className="p-8 h-full flex flex-col justify-center">
+                      {mode === "learning" ? (
+                        <LearningCard card={card} isActive={isActive} />
+                      ) : (
+                        <QuizCard
+                          card={card}
+                          selectedAnswer={isActive ? selectedAnswer : null}
+                          showResult={isActive ? showResult : false}
+                          onAnswerSelect={isActive ? handleAnswerSelect : () => {}}
+                          isActive={isActive}
+                        />
+                      )}
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+
+            {/* Dot indicators */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+              <div className="flex justify-center space-x-2">
+                {cards.map((_, index) => (
+                  <motion.div
+                    key={index}
+                    className={`h-2 w-2 rounded-full cursor-pointer transition-colors duration-150 ${
+                      currentCardIndex === index
+                        ? mode === "learning"
+                          ? "bg-emerald-400"
+                          : "bg-cyan-400"
+                        : "bg-gray-600/50"
+                    }`}
+                    animate={{
+                      scale: currentCardIndex === index ? 1.2 : 1,
+                    }}
+                    onClick={() => setCurrentCardIndex(index)}
+                    transition={{ duration: 0.15 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Navigation */}
           <div className="flex items-center justify-between mt-6">
@@ -281,38 +355,26 @@ export default function FlashcardSystem({
               Previous
             </Button>
 
-            <div className="flex items-center space-x-2">
-              {cards.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentCardIndex
-                      ? "bg-emerald-400 scale-125 shadow-lg shadow-emerald-400/50"
-                      : "bg-gray-600/50 hover:bg-gray-500/70"
-                  }`}
-                />
-              ))}
+            <div className="text-center text-gray-500 text-sm">
+              {mode === "learning" ? "Drag cards or use buttons to navigate" : "Select an answer and click Next"}
             </div>
 
             <Button
               onClick={handleNext}
               disabled={mode === "quiz" && selectedAnswer === null}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[100px]"
             >
               {isLastCard ? "Complete" : "Next"}
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
-
-          {/* Swipe Hint */}
-          <div className="text-center mt-4 text-gray-500 text-sm">Swipe left or right to navigate</div>
         </div>
       </div>
     </div>
   )
 }
 
-function LearningCard({ card }: { card: FlashcardData }) {
+function LearningCard({ card, isActive }: { card: FlashcardData; isActive: boolean }) {
   const [userQuestion, setUserQuestion] = useState("")
   const [response, setResponse] = useState("")
   const [loading, setLoading] = useState(false)
@@ -361,77 +423,79 @@ function LearningCard({ card }: { card: FlashcardData }) {
         <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-500/20 to-cyan-400/20 rounded-full flex items-center justify-center mb-4 shadow-lg border border-emerald-500/30">
           <Brain className="w-8 h-8 text-emerald-400" />
         </div>
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4 break-words leading-tight tracking-tight">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4 break-words leading-tight tracking-tight">
           {card.title}
         </h2>
-        <div className="bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 p-6 rounded-xl border border-emerald-500/20 mx-auto max-w-prose text-lg text-gray-200 leading-relaxed whitespace-pre-line break-words shadow-sm backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 p-4 rounded-xl border border-emerald-500/20 mx-auto max-w-prose text-base text-gray-200 leading-relaxed whitespace-pre-line break-words shadow-sm backdrop-blur-sm">
           {card.content}
         </div>
       </div>
-      {/* Ask Button and Input */}
-      <div className="flex flex-col items-end mt-4">
-        {!showInput && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 shadow-lg transition-all duration-300 hover:scale-105 flex items-center whitespace-nowrap border border-emerald-500/20 hover:border-emerald-500/30"
-            onClick={() => setShowInput(true)}
-            aria-label="Focus Mode"
-          >
-            <Target className="w-5 h-5 mr-2 flex-shrink-0" />
-            <span className="whitespace-nowrap">Focus Mode</span>
-          </Button>
-        )}
-        {showInput && (
-          <div className="w-full max-w-md animate-fade-in-slide-up mt-2">
-            <div className="bg-gradient-to-r from-gray-800/80 to-gray-700/50 border border-emerald-500/30 rounded-lg shadow-xl p-2 flex items-center gap-2 backdrop-blur-sm">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  className="w-full p-3 pr-10 border-none bg-transparent text-white placeholder:text-emerald-400/60 focus:outline-none text-base"
-                  placeholder="Ask to expand, elaborate, or simplify..."
-                  value={userQuestion}
-                  onChange={(e) => setUserQuestion(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAsk()
+      {/* Ask Button and Input - Only show on active card */}
+      {isActive && (
+        <div className="flex flex-col items-end mt-4">
+          {!showInput && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 shadow-lg transition-all duration-300 hover:scale-105 flex items-center whitespace-nowrap border border-emerald-500/20 hover:border-emerald-500/30"
+              onClick={() => setShowInput(true)}
+              aria-label="Focus Mode"
+            >
+              <Target className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="whitespace-nowrap">Focus Mode</span>
+            </Button>
+          )}
+          {showInput && (
+            <div className="w-full max-w-md animate-fade-in-slide-up mt-2">
+              <div className="bg-gradient-to-r from-gray-800/80 to-gray-700/50 border border-emerald-500/30 rounded-lg shadow-xl p-2 flex items-center gap-2 backdrop-blur-sm">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    className="w-full p-2 pr-8 border-none bg-transparent text-white placeholder:text-emerald-400/60 focus:outline-none text-sm"
+                    placeholder="Ask to expand, elaborate, or simplify..."
+                    value={userQuestion}
+                    onChange={(e) => setUserQuestion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAsk()
+                    }}
+                    disabled={loading}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAsk}
+                    disabled={loading || !userQuestion.trim()}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-emerald-400/80 hover:text-emerald-400 focus:outline-none transition-colors duration-200 disabled:opacity-50 hover:scale-110"
+                    aria-label="Send"
+                  >
+                    <Send className="w-3 h-3" />
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white hover:bg-red-500/10 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all duration-200 h-8 w-8"
+                  onClick={() => {
+                    setShowInput(false)
+                    setUserQuestion("")
+                    setError("")
                   }}
                   disabled={loading}
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={handleAsk}
-                  disabled={loading || !userQuestion.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-emerald-400/80 hover:text-emerald-400 focus:outline-none transition-colors duration-200 disabled:opacity-50 hover:scale-110"
-                  aria-label="Send"
+                  aria-label="Cancel"
                 >
-                  <Send className="w-4 h-4" />
-                </button>
+                  <XIcon className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="text-gray-400 hover:text-white hover:bg-red-500/10 focus:ring-2 focus:ring-red-500/20 focus:outline-none transition-all duration-200"
-                onClick={() => {
-                  setShowInput(false)
-                  setUserQuestion("")
-                  setError("")
-                }}
-                disabled={loading}
-                aria-label="Cancel"
-              >
-                <XIcon className="w-5 h-5" />
-              </Button>
+              {error && (
+                <div className="w-full mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm text-left backdrop-blur-sm">
+                  {error}
+                </div>
+              )}
             </div>
-            {error && (
-              <div className="w-full mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-sm text-left backdrop-blur-sm">
-                {error}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
       {/* AI Response Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="AI Response">
         <div className="p-2 text-left text-gray-200">
@@ -468,27 +532,29 @@ function QuizCard({
   selectedAnswer,
   showResult,
   onAnswerSelect,
+  isActive,
 }: {
   card: FlashcardData
   selectedAnswer: number | null
   showResult: boolean
   onAnswerSelect: (index: number) => void
+  isActive: boolean
 }) {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="text-center">
         <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-500/20 to-purple-400/20 rounded-full flex items-center justify-center mb-4 shadow-lg border border-cyan-500/30">
           <Target className="w-8 h-8 text-cyan-400" />
         </div>
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-6 break-words leading-tight tracking-tight">
+        <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-4 break-words leading-tight tracking-tight">
           {card.question}
         </h2>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {card.options?.map((option, index) => {
           let buttonClass =
-            "w-full p-4 text-left border rounded-lg transition-all duration-200 text-base font-medium break-words "
+            "w-full p-3 text-left border rounded-lg transition-all duration-200 text-sm font-medium break-words "
 
           if (showResult) {
             if (index === card.correctAnswer) {
@@ -510,15 +576,15 @@ function QuizCard({
           return (
             <button
               key={index}
-              onClick={() => !showResult && onAnswerSelect(index)}
-              disabled={showResult}
+              onClick={() => isActive && !showResult && onAnswerSelect(index)}
+              disabled={!isActive || showResult}
               className={buttonClass}
             >
               <div className="flex items-center justify-between">
                 <span>{option}</span>
-                {showResult && index === card.correctAnswer && <CheckCircle className="w-5 h-5 text-emerald-400" />}
+                {showResult && index === card.correctAnswer && <CheckCircle className="w-4 h-4 text-emerald-400" />}
                 {showResult && index === selectedAnswer && index !== card.correctAnswer && (
-                  <XCircle className="w-5 h-5 text-red-400" />
+                  <XCircle className="w-4 h-4 text-red-400" />
                 )}
               </div>
             </button>
@@ -527,8 +593,8 @@ function QuizCard({
       </div>
 
       {showResult && (
-        <div className="text-center p-4 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 rounded-lg border border-emerald-500/20 mt-4 backdrop-blur-sm">
-          <p className="text-gray-200 text-lg font-medium">
+        <div className="text-center p-3 bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 rounded-lg border border-emerald-500/20 mt-4 backdrop-blur-sm">
+          <p className="text-gray-200 text-base font-medium">
             {selectedAnswer === card.correctAnswer ? (
               <span className="text-emerald-400 font-semibold">Correct! 🎉</span>
             ) : (
