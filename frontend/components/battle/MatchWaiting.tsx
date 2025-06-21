@@ -30,6 +30,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
   const [battle, setBattle] = useState<Battle | null>(null)
   const [error, setError] = useState<string>("")
   const [socketPlayers, setSocketPlayers] = useState<BattlePlayer[]>([])
+  const [opponentJoined, setOpponentJoined] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,7 +43,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
   // Listen for socket events
   useEffect(() => {
     const handleOpponentJoined = (event: CustomEvent) => {
-      console.log("Opponent joined:", event.detail)
+      console.log("Opponent joined event received:", event.detail)
       const { username, userId } = event.detail
       
       // Create opponent player object
@@ -54,22 +55,25 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         wins: Math.floor(Math.random() * 50),
       }
       
+      setOpponentJoined(true)
+      
       if (onOpponentJoined) {
         onOpponentJoined(opponentPlayer)
       }
     }
 
     const handleBattlePlayersUpdated = (event: CustomEvent) => {
-      console.log("Battle players updated:", event.detail)
+      console.log("Battle players updated event received:", event.detail)
       const { players, playerCount } = event.detail
       setSocketPlayers(players)
       
       // If we have 2 players and haven't triggered opponent joined yet
-      if (playerCount === 2 && onOpponentJoined) {
+      if (playerCount === 2 && !opponentJoined && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
         const opponent = players.find(p => p.userId !== currentUser?.id)
         
         if (opponent) {
+          console.log("Found opponent in players list:", opponent)
           const opponentPlayer: Player = {
             id: opponent.userId,
             name: opponent.username,
@@ -77,6 +81,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
             rank: Math.floor(Math.random() * 1000) + 500,
             wins: Math.floor(Math.random() * 50),
           }
+          setOpponentJoined(true)
           onOpponentJoined(opponentPlayer)
         }
       }
@@ -102,6 +107,25 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       try {
         const battleData = await battleService.getBattle(roomId)
         setBattle(battleData)
+        
+        // If battle already has 2 players, trigger opponent joined
+        if (battleData && battleData.players.length === 2 && !opponentJoined && onOpponentJoined) {
+          const currentUser = battleService.getCurrentUser()
+          const opponent = battleData.players.find(p => p.userId !== currentUser?.id)
+          
+          if (opponent) {
+            console.log("Found opponent in initial battle data:", opponent)
+            const opponentPlayer: Player = {
+              id: opponent.userId,
+              name: opponent.username,
+              avatar: "🧠",
+              rank: Math.floor(Math.random() * 1000) + 500,
+              wins: Math.floor(Math.random() * 50),
+            }
+            setOpponentJoined(true)
+            onOpponentJoined(opponentPlayer)
+          }
+        }
       } catch (err) {
         console.error("Error fetching battle data:", err)
         setError("Failed to load battle data")
@@ -116,7 +140,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       window.removeEventListener("battleUpdated", handleBattleUpdated as EventListener)
       window.removeEventListener("battleEnded", handleBattleEnded as EventListener)
     }
-  }, [roomId, onOpponentJoined])
+  }, [roomId, onOpponentJoined, opponentJoined])
 
   const handleCopyRoomId = async () => {
     try {
@@ -171,16 +195,21 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         </motion.div>
 
         <h2 className="text-3xl font-bold text-white mb-2">
-          Waiting for Opponent
+          {playerCount >= 2 ? "Ready to Start!" : "Waiting for Opponent"}
           <motion.span
             animate={{ opacity: [1, 0, 1] }}
             transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
             className="text-emerald-400"
           >
-            ...
+            {playerCount >= 2 ? "" : "..."}
           </motion.span>
         </h2>
-        <p className="text-gray-400">Share your room code or wait for someone to join!</p>
+        <p className="text-gray-400">
+          {playerCount >= 2 
+            ? "Both players are ready! Battle will start soon." 
+            : "Share your room code or wait for someone to join!"
+          }
+        </p>
       </div>
 
       {/* Room Info Card */}

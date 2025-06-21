@@ -30,13 +30,17 @@ io.on("connection", (socket) => {
     if (!existingPlayer) {
       battlePlayers.push({ userId, username, socketId: socket.id });
       activeBattles.set(battleId, battlePlayers);
+      console.log(`User ${username} joined battle ${battleId}`);
+    } else {
+      // Update socket ID if player reconnects
+      existingPlayer.socketId = socket.id;
+      console.log(`User ${username} reconnected to battle ${battleId}`);
     }
     
-    // Notify other players in the room
+    // Notify other players in the room about the new joiner
     socket.to(battleId).emit("opponent_joined", { username, userId });
-    console.log(`User ${username} joined battle ${battleId}`);
     
-    // Emit updated player list to all players in the room
+    // Emit updated player list to ALL players in the room (including the joiner)
     io.to(battleId).emit("battle_players_updated", {
       players: battlePlayers,
       playerCount: battlePlayers.length
