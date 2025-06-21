@@ -149,6 +149,36 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
     }, 1000)
   }
 
+  const handleForceRefresh = async () => {
+    console.log("🔄 Force refreshing battle data")
+    try {
+      const updatedBattle = await battleService.getBattle(roomId)
+      if (updatedBattle) {
+        console.log("🔄 Updated battle data:", updatedBattle)
+        const currentUser = battleService.getCurrentUser()
+        if (currentUser && updatedBattle.players.length >= 2) {
+          const isCreator = updatedBattle.players[0]?.userId === currentUser.id
+          setIsRoomCreator(isCreator)
+          setWaitingForCreator(!isCreator)
+          
+          // If we have 2 players and no opponent is set, trigger opponent joined
+          if (updatedBattle.players.length === 2 && !opponent) {
+            const opponent = updatedBattle.players.find(p => p.userId !== currentUser.id)
+            if (opponent) {
+              console.log("🎯 Force triggering opponent joined for:", opponent.username)
+              // Dispatch custom event to trigger opponent joined
+              window.dispatchEvent(new CustomEvent("opponentJoined", { 
+                detail: { username: opponent.username, userId: opponent.userId }
+              }))
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error force refreshing:", error)
+    }
+  }
+
   if (battleStarted) {
     return (
       <motion.div
@@ -436,6 +466,23 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
             <p>Waiting for Creator: {waitingForCreator ? 'Yes' : 'No'}</p>
             <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
             <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
+            <p>Socket Connected: {battleService.isConnected() ? 'Yes' : 'No'}</p>
+          </div>
+          
+          {/* Manual trigger button for testing */}
+          <div className="mt-3 pt-3 border-t border-gray-700/30 space-y-2">
+            <Button
+              onClick={() => battleService.triggerBattleReady(roomId)}
+              className="w-full text-xs py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
+            >
+              🔧 Manual Trigger Battle Ready
+            </Button>
+            <Button
+              onClick={handleForceRefresh}
+              className="w-full text-xs py-1 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
+            >
+              🔄 Force Refresh Battle Data
+            </Button>
           </div>
         </div>
       </motion.div>

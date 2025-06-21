@@ -259,6 +259,23 @@ class BattleService {
     }
   }
 
+  // Manually trigger battle ready event (for testing)
+  triggerBattleReady(battleId: string) {
+    if (this.socket) {
+      console.log("🔧 Manually triggering battle ready for:", battleId);
+      this.socket.emit("join_battle", { 
+        battleId, 
+        username: this.currentUser?.name || "Unknown",
+        userId: this.currentUser?.id || "unknown"
+      });
+    }
+  }
+
+  // Check if socket is connected
+  isConnected(): boolean {
+    return this.socket?.connected || false;
+  }
+
   // Get current battle
   getCurrentBattle(): Battle | null {
     return this.currentBattle;

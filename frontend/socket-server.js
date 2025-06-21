@@ -41,6 +41,7 @@ io.on("connection", (socket) => {
     }
     
     // Always emit updated player list to ALL players in the room (including the joiner)
+    console.log(`📊 Emitting battle_players_updated to all players in ${battleId}:`, battlePlayers.map(p => p.username));
     io.to(battleId).emit("battle_players_updated", {
       players: battlePlayers,
       playerCount: battlePlayers.length
@@ -50,13 +51,14 @@ io.on("connection", (socket) => {
     
     // If this is not the first player, notify other players about the new joiner
     if (battlePlayers.length > 1) {
+      console.log(`🎉 Emitting opponent_joined for ${username} to other players in ${battleId}`);
       socket.to(battleId).emit("opponent_joined", { username, userId });
-      console.log(`🎉 Emitted opponent_joined for ${username} to other players in ${battleId}`);
     }
     
     // If we have exactly 2 players, trigger battle start for all players
     if (battlePlayers.length === 2) {
       console.log(`🚀 Battle ${battleId} is ready to start with 2 players!`);
+      console.log(`🚀 Emitting battle_ready to ALL players in ${battleId}:`, battlePlayers.map(p => p.username));
       io.to(battleId).emit("battle_ready", {
         players: battlePlayers,
         battleId: battleId
