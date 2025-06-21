@@ -90,29 +90,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("ensure_players_connected", (data) => {
-    const { battleId, players } = data;
-    console.log(`🔧 Ensuring all players are connected to battle ${battleId}:`, players.map(p => p.username));
-    
-    // Force emit battle_players_updated to all players in the room
-    const battlePlayers = activeBattles.get(battleId) || [];
-    console.log(`🔧 Current battle players:`, battlePlayers.map(p => p.username));
-    
-    if (battlePlayers.length === 2) {
-      console.log(`🔧 Emitting battle_players_updated to ensure synchronization`);
-      io.to(battleId).emit("battle_players_updated", {
-        players: battlePlayers,
-        playerCount: battlePlayers.length
-      });
-      
-      console.log(`🔧 Emitting battle_ready to ensure all players are ready`);
-      io.to(battleId).emit("battle_ready", {
-        players: battlePlayers,
-        battleId: battleId
-      });
-    }
-  });
-
   socket.on("battle_start", (data) => {
     const { battleId } = data;
     console.log(`⚔️ Battle ${battleId} starting for all players`);

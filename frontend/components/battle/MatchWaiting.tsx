@@ -50,8 +50,6 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         if (currentUser) {
           battleService.connect(currentUser).then(() => {
             console.log("✅ Socket reconnected")
-            // Rejoin the room after reconnection
-            battleService.rejoinSocketRoom(roomId)
           })
         }
       }
@@ -59,21 +57,6 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
 
     // Check every 5 seconds
     const interval = setInterval(checkSocketConnection, 5000)
-    
-    return () => clearInterval(interval)
-  }, [roomId])
-
-  // Periodic room join verification
-  useEffect(() => {
-    const verifyRoomJoin = () => {
-      if (battleService.isConnected()) {
-        console.log("🔍 Verifying room join for:", roomId)
-        battleService.rejoinSocketRoom(roomId)
-      }
-    }
-
-    // Verify room join every 10 seconds
-    const interval = setInterval(verifyRoomJoin, 10000)
     
     return () => clearInterval(interval)
   }, [roomId])
@@ -90,12 +73,6 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         if (currentUser) {
           await battleService.connect(currentUser)
         }
-      }
-      
-      // Ensure we're joined to the room
-      if (battleService.isConnected()) {
-        console.log("🔧 Socket connected, ensuring room join...")
-        battleService.rejoinSocketRoom(roomId)
       }
     }
 
@@ -277,12 +254,6 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
               setOpponentJoined(true)
               onOpponentJoined(opponentPlayer)
             }
-          }
-          
-          // If we have 2 players but socket events haven't triggered, try to ensure all players are connected
-          if (battleData && battleData.players.length === 2 && !opponentJoinedRef.current) {
-            console.log("🔄 Backup: Attempting to ensure all players are connected to socket room")
-            await battleService.ensureAllPlayersConnected(roomId)
           }
         } catch (err) {
           console.error("❌ Error in backup battle data check:", err)
@@ -525,109 +496,6 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
           🎯 <strong>Quick Tip:</strong> Share the room code with friends or wait for random players to join!
         </p>
         <p className="text-xs text-gray-500">Battle will start automatically when both players are ready</p>
-      </motion.div>
-
-      {/* Debug Info */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-6 p-4 bg-gray-800/30 rounded-lg border border-gray-700/30"
-      >
-        <h4 className="text-sm font-semibold text-gray-300 mb-3">Debug Info</h4>
-        <div className="text-xs space-y-1 text-gray-400">
-          <p>Opponent Joined: {opponentJoined ? '✅ Yes' : '❌ No'}</p>
-          <p>Socket Players: {socketPlayers.length}</p>
-          <p>Battle Players: {battle?.players?.length || 0}</p>
-          <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
-          <p>Socket Connected: {battleService.isConnected() ? '✅ Yes' : '❌ No'}</p>
-        </div>
-        
-        {/* Manual trigger buttons */}
-        <div className="mt-3 pt-3 border-t border-gray-700/30 space-y-2">
-          <Button
-            onClick={() => {
-              console.log("🔧 Manual trigger: Refreshing battle data")
-              battleService.refreshBattleData(roomId).then(updatedBattle => {
-                console.log("🔧 Updated battle data:", updatedBattle)
-                if (updatedBattle) {
-                  setBattle(updatedBattle)
-                }
-              })
-            }}
-            className="w-full text-xs py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
-          >
-            🔄 Refresh Battle Data
-          </Button>
-          
-          <Button
-            onClick={() => {
-              console.log("🔧 Manual trigger: Triggering battle ready")
-              battleService.triggerBattleReady(roomId)
-            }}
-            className="w-full text-xs py-1 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-          >
-            🚀 Trigger Battle Ready
-          </Button>
-          
-          <Button
-            onClick={() => {
-              console.log("🔧 Manual trigger: Rejoining socket room")
-              battleService.rejoinSocketRoom(roomId)
-            }}
-            className="w-full text-xs py-1 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30"
-          >
-            🔗 Rejoin Socket Room
-          </Button>
-          
-          <Button
-            onClick={() => {
-              console.log("🔧 Manual trigger: Force opponent joined")
-              if (battle && battle.players.length === 2 && onOpponentJoined) {
-                const currentUser = battleService.getCurrentUser()
-                const opponent = battle.players.find(p => p.userId !== currentUser?.id)
-                if (opponent && !opponentJoinedRef.current) {
-                  console.log("🔧 Force triggering opponent joined for:", opponent.username)
-                  const opponentPlayer: Player = {
-                    id: opponent.userId,
-                    name: opponent.username,
-                    avatar: "🧠",
-                    rank: Math.floor(Math.random() * 1000) + 500,
-                    wins: Math.floor(Math.random() * 50),
-                  }
-                  opponentJoinedRef.current = true
-                  setOpponentJoined(true)
-                  onOpponentJoined(opponentPlayer)
-                }
-              }
-            }}
-            className="w-full text-xs py-1 bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30"
-          >
-            🎯 Force Opponent Joined
-          </Button>
-          
-          <Button
-            onClick={async () => {
-              console.log("🔧 Manual trigger: Triggering all socket events")
-              const success = await battleService.triggerAllSocketEvents(roomId)
-              console.log("🔧 Trigger all events result:", success)
-            }}
-            className="w-full text-xs py-1 bg-indigo-500/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/30"
-          >
-            ⚡ Trigger All Socket Events
-          </Button>
-          
-          <Button
-            onClick={async () => {
-              console.log("🔧 Manual trigger: Ensuring all players connected")
-              const success = await battleService.ensureAllPlayersConnected(roomId)
-              console.log("🔧 Ensure all players connected result:", success)
-            }}
-            className="w-full text-xs py-1 bg-teal-500/20 text-teal-400 border-teal-500/30 hover:bg-teal-500/30"
-          >
-            🔗 Ensure All Players Connected
-          </Button>
-        </div>
       </motion.div>
     </div>
   )
