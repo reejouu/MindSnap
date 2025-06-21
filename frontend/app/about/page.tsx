@@ -411,45 +411,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <motion.section
-          className="text-center py-20 bg-gradient-to-r from-emerald-900/20 via-cyan-900/20 to-emerald-900/20 rounded-3xl"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1 }}
-        >
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="w-16 h-16 mx-auto bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center mb-6">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Ready to Join Our
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                Learning Revolution?
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-              Join thousands of learners who've already transformed their study habits with MindSnap. Your learning
-              journey starts here.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold px-10 py-4 text-xl rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 group"
-              >
-                Start Learning Free
-                <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </Button>
-              <div className="flex items-center space-x-2 text-gray-400">
-                <CheckCircle className="w-5 h-5 text-emerald-400" />
-                <span>No credit card required</span>
-              </div>
-            </div>
-          </div>
-        </motion.section>
+        
 
         {/* Contact Section */}
         <motion.section
@@ -465,9 +427,12 @@ export default function AboutPage() {
           <Button
             variant="outline"
             className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/50"
+            asChild
           >
-            <Mail className="w-4 h-4 mr-2" />
-            Contact Us
+            <a href="mailto:sanchayan.khan18@gmail.com">
+              <Mail className="w-4 h-4 mr-2" />
+              Contact Us
+            </a>
           </Button>
         </motion.section>
       </div>

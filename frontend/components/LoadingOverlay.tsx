@@ -12,7 +12,7 @@ export default function LoadingOverlay({ show = false }: { show: boolean }) {
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 80 80" fill="none">
             <circle cx="40" cy="40" r="32" stroke="#34d399" strokeWidth="6" strokeDasharray="60 100" strokeLinecap="round" className="animate-pulse-green" />
             <circle cx="40" cy="40" r="24" stroke="#06b6d4" strokeWidth="4" strokeDasharray="40 80" strokeLinecap="round" className="animate-pulse-cyan" />
-            <circle cx="40" cy="40" r="16" stroke="#a78bfa" strokeWidth="3" strokeDasharray="20 40" strokeLinecap="round" className="animate-pulse-purple" />
+
           </svg>
           {/* Orbiting dot */}
           <span className="absolute left-1/2 top-0 w-4 h-4 -translate-x-1/2 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full shadow-lg animate-orbit" />

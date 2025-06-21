@@ -147,14 +147,9 @@ export default function MindSnapLanding() {
             <div
               className={`space-y-6 transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
             >
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight">
-                <span className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
-                  Learn Like You
-                </span>
-                <br />
-
+              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black leading-tight">
                 <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  Binge Content
+                  MindSnap
                 </span>
               </h1>
 
@@ -207,6 +202,7 @@ export default function MindSnapLanding() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold px-8 py-4 text-lg rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 group"
+                onClick={() => window.location.href = '/dashboard'}
               >
                 Start Learning Free
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -236,14 +232,6 @@ export default function MindSnapLanding() {
                   4.9★
                 </div>
                 <div className="text-gray-400 text-sm">User Rating</div>
-              </div>
-            </div>
-
-            {/* Scroll Indicator */}
-            <div className="pt-16">
-              <div className="flex flex-col items-center space-y-2 animate-bounce">
-                <span className="text-gray-400 text-sm">Discover More</span>
-                <ArrowDown className="w-5 h-5 text-emerald-400" />
               </div>
             </div>
           </div>
@@ -277,21 +265,26 @@ export default function MindSnapLanding() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className={`scroll-animate group p-8 rounded-3xl bg-gradient-to-br from-gray-900/50 to-gray-800/30 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/30 transition-all duration-500 hover:scale-105 hover:-translate-y-2 cursor-pointer`}
+                className={`scroll-animate group relative p-8 rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/60 border-2 border-emerald-500/10 hover:border-emerald-400/40 shadow-2xl hover:shadow-emerald-400/20 transition-all duration-500 hover:scale-105 hover:-translate-y-2 cursor-pointer overflow-hidden backdrop-blur-xl`}
                 style={{ animationDelay: `${index * 100}ms` }}
                 onMouseEnter={() => setActiveFeature(index)}
               >
-                <div
-                  className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}
-                >
-                  <feature.icon className="w-8 h-8 text-white" />
+                {/* Glow effect */}
+                <div className="absolute -inset-2 bg-gradient-to-br from-emerald-400/10 to-cyan-400/10 rounded-3xl blur-2xl opacity-60 group-hover:opacity-80 transition-all duration-500 pointer-events-none z-0" />
+                {/* Icon with ring */}
+                <div className={`relative w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg z-10`}>
+                  <div className="absolute -inset-1 rounded-2xl bg-white/10 blur-md opacity-60 group-hover:opacity-80 transition-all duration-500 pointer-events-none" />
+                  <feature.icon className="w-8 h-8 text-white drop-shadow-lg z-10" />
                 </div>
-                <h3 className="text-xl font-bold mb-4 text-white group-hover:text-emerald-400 transition-colors">
+                <h3 className="text-2xl font-bold mb-4 text-white group-hover:text-emerald-400 transition-colors z-10 relative tracking-wide">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                <p className="text-gray-300 leading-relaxed group-hover:text-white transition-colors z-10 relative text-base md:text-lg font-medium">
                   {feature.description}
                 </p>
+                {/* Decorative floating shapes */}
+                <div className="absolute top-2 right-4 w-6 h-6 bg-cyan-400/20 rounded-full blur-md animate-float z-0" />
+                <div className="absolute bottom-4 left-6 w-4 h-4 bg-emerald-400/20 rounded-full blur-md animate-float z-0" />
               </div>
             ))}
           </div>

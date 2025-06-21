@@ -281,7 +281,7 @@ export default function BattleRoyalePage() {
               transition={{ duration: 0.6 }}
             >
               <div className="flex items-center justify-center mb-4">
-                <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 p-3 rounded-full shadow-lg">
+                <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 p-5 rounded-full shadow-lg">
                   <Swords className="w-8 h-8 text-white" />
                 </div>
               </div>
