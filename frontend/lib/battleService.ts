@@ -298,8 +298,16 @@ class BattleService {
 
   // Emit battle start event
   emitBattleStart(battleId: string, quiz: any) {
+    console.log("🚀 emitBattleStart called with battleId:", battleId);
+    console.log("🚀 emitBattleStart - Socket connected:", this.socket?.connected);
+    console.log("🚀 emitBattleStart - Quiz data:", quiz ? "YES" : "NO");
+    
     if (this.socket) {
+      console.log("🚀 Emitting start_battle event to socket server");
       this.socket.emit("start_battle", { battleId, quiz });
+      console.log("🚀 start_battle event emitted successfully");
+    } else {
+      console.error("❌ Socket not connected, cannot emit start_battle");
     }
   }
 

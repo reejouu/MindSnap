@@ -140,11 +140,15 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
     const handleBattleStarted = (event: CustomEvent) => {
       console.log("⚔️ VSIntro - Battle started event received:", event.detail)
       const { quiz } = event.detail
+      console.log("⚔️ VSIntro - Quiz data received:", quiz ? "YES" : "NO")
       setBattleStarted(true)
       setCountdown(null)
       setWaitingForCreator(false)
       if (quiz) {
+        console.log("⚔️ VSIntro - Calling onBattleStart with quiz data")
         onBattleStart(quiz)
+      } else {
+        console.error("❌ VSIntro - No quiz data in battle started event")
       }
     }
 

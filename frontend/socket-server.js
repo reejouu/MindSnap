@@ -92,8 +92,16 @@ io.on("connection", (socket) => {
 
   socket.on("start_battle", (data) => {
     const { battleId, quiz } = data;
-    console.log(`⚔️ Battle ${battleId} starting for all players with quiz:`, quiz);
+    console.log(`⚔️ Battle ${battleId} starting for all players with quiz:`, quiz ? "YES" : "NO");
+    console.log(`⚔️ Quiz data details:`, quiz);
+    console.log(`⚔️ Broadcasting to room ${battleId}`);
+    
+    // Check how many sockets are in the room
+    const roomSockets = io.sockets.adapter.rooms.get(battleId);
+    console.log(`⚔️ Sockets in room ${battleId}:`, roomSockets ? roomSockets.size : 0);
+    
     io.to(battleId).emit("battle_started", { battleId, quiz });
+    console.log(`⚔️ Battle started event emitted to room ${battleId}`);
   });
 
   socket.on("battle_countdown", (data) => {

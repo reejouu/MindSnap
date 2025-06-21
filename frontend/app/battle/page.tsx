@@ -97,8 +97,10 @@ export default function BattleRoyalePage() {
     const handleBattleStarted = (event: CustomEvent) => {
       console.log("⚔️ Battle started event received in main page:", event.detail)
       const { quiz } = event.detail
+      console.log("⚔️ Main page - Quiz data received:", quiz ? "YES" : "NO")
       if (quiz) {
         console.log("📝 Quiz received in main page, transitioning to battle-quiz")
+        console.log("📝 Current battle state:", battleState)
         setQuiz(quiz)
         setBattleState("battle-quiz")
       } else {
