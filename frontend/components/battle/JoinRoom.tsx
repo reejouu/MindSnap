@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Target, Users, Clock, AlertCircle, Loader2 } from "lucide-react"
-import { battleService, User } from "@/lib/battleService"
+import { Target, Users, Clock, AlertCircle, Loader2, User } from "lucide-react"
+import { battleService, User as BattleUser } from "@/lib/battleService"
 
 interface JoinRoomProps {
   topic: string
@@ -18,12 +18,18 @@ interface JoinRoomProps {
 
 export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
   const [roomId, setRoomId] = useState("")
+  const [username, setUsername] = useState("")
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState("")
 
   const handleJoinRoom = async () => {
     if (!roomId.trim()) {
       setError("Please enter a room code")
+      return
+    }
+
+    if (!username.trim()) {
+      setError("Please enter your username")
       return
     }
 
@@ -36,10 +42,10 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
     setIsJoining(true)
 
     try {
-      // Create a mock user for now - in a real app, this would come from auth
-      const user: User = {
+      // Create user with actual username
+      const user: BattleUser = {
         id: `user_${Date.now()}`,
-        name: `Player_${Math.floor(Math.random() * 1000)}`,
+        name: username.trim(),
       }
 
       // Connect to socket service
@@ -66,6 +72,11 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase()
     setRoomId(value)
+    if (error) setError("")
+  }
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value)
     if (error) setError("")
   }
 
@@ -98,6 +109,23 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Username Input */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-300">Your Username</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Enter your username..."
+                value={username}
+                onChange={handleUsernameChange}
+                className="pl-10 bg-gradient-to-r from-gray-800/80 to-cyan-500/5 border-gray-600/50 text-white focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20"
+                maxLength={20}
+                disabled={isJoining}
+              />
+            </div>
+          </div>
+
           {/* Room Code Input */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-gray-300">Room Code</label>
@@ -146,7 +174,7 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
           {/* Join Button */}
           <Button
             onClick={handleJoinRoom}
-            disabled={isJoining || !roomId.trim()}
+            disabled={isJoining || !roomId.trim() || !username.trim()}
             className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100 disabled:opacity-50"
           >
             {isJoining ? (

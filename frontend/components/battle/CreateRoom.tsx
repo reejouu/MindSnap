@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { generateRoomId } from "@/lib/utils"
-import { Copy, Share2, Users, Clock, Crown, Sparkles, CheckCircle, AlertCircle } from "lucide-react"
-import { battleService, User } from "@/lib/battleService"
+import { Copy, Share2, Users, Clock, Crown, Sparkles, CheckCircle, AlertCircle, User } from "lucide-react"
+import { battleService, User as BattleUser } from "@/lib/battleService"
 
 interface CreateRoomProps {
   topic: string
@@ -16,9 +17,11 @@ interface CreateRoomProps {
 
 export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
   const [roomId, setRoomId] = useState<string>("")
+  const [username, setUsername] = useState<string>("")
   const [copied, setCopied] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string>("")
+  const [roomCreated, setRoomCreated] = useState(false)
 
   useEffect(() => {
     // Generate room ID when component mounts
@@ -37,14 +40,19 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
   }
 
   const handleCreateRoom = async () => {
+    if (!username.trim()) {
+      setError("Please enter your username")
+      return
+    }
+
     setIsCreating(true)
     setError("")
 
     try {
-      // Create a mock user for now - in a real app, this would come from auth
-      const user: User = {
+      // Create user with actual username
+      const user: BattleUser = {
         id: `user_${Date.now()}`,
-        name: `Player_${Math.floor(Math.random() * 1000)}`,
+        name: username.trim(),
       }
 
       // Connect to socket service
@@ -56,6 +64,7 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
       // Use the actual battle ID from database
       const actualRoomId = battle._id
       setRoomId(actualRoomId)
+      setRoomCreated(true)
 
       // Notify parent component
       onRoomCreated(actualRoomId)
@@ -117,32 +126,55 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
             </motion.div>
           )}
 
-          {/* Room ID Display */}
+          {/* Username Input */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-300">Room Code</label>
-            <div className="flex items-center space-x-3">
-              <div className="flex-1 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-lg">
-                <code className="text-2xl font-bold text-white tracking-wider">{roomId}</code>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleCopyRoomId}
-                className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-              >
-                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </Button>
+            <label className="text-sm font-medium text-gray-300">Your Username</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Enter your username..."
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="pl-10 bg-gradient-to-r from-gray-800/80 to-emerald-500/5 border-gray-600/50 text-white focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20"
+                maxLength={20}
+                disabled={isCreating}
+              />
             </div>
-            {copied && (
-              <motion.p
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-sm text-emerald-400"
-              >
-                Room code copied to clipboard!
-              </motion.p>
-            )}
           </div>
+
+          {/* Room ID Display - Only show after room is created */}
+          {roomCreated && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-3"
+            >
+              <label className="text-sm font-medium text-gray-300">Room Code</label>
+              <div className="flex items-center space-x-3">
+                <div className="flex-1 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 rounded-lg">
+                  <code className="text-2xl font-bold text-white tracking-wider">{roomId}</code>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyRoomId}
+                  className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                >
+                  {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              {copied && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-emerald-400"
+                >
+                  Room code copied to clipboard!
+                </motion.p>
+              )}
+            </motion.div>
+          )}
 
           {/* Room Settings */}
           <div className="grid grid-cols-2 gap-4">
@@ -164,31 +196,33 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <Button
-              onClick={handleCreateRoom}
-              disabled={isCreating}
-              className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
-            >
-              {isCreating ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
-                />
-              ) : (
-                <Sparkles className="w-5 h-5 mr-2" />
-              )}
-              {isCreating ? "Creating Room..." : "Create & Wait for Opponent"}
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleShare}
-              className="w-full border-gray-600/50 text-gray-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share Room Code
-            </Button>
+            {!roomCreated ? (
+              <Button
+                onClick={handleCreateRoom}
+                disabled={isCreating || !username.trim()}
+                className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
+              >
+                {isCreating ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
+                  />
+                ) : (
+                  <Sparkles className="w-5 h-5 mr-2" />
+                )}
+                {isCreating ? "Creating Room..." : "Create & Wait for Opponent"}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleShare}
+                className="w-full border-gray-600/50 text-gray-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share Room Code
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

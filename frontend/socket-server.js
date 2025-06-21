@@ -9,16 +9,40 @@ const io = new Server(server, {
   }
 });
 
+// Store active battles and their players
+const activeBattles = new Map();
+
 io.on("connection", (socket) => {
   console.log("🧠 Client connected: " + socket.id);
 
   socket.on("join_battle", async (data) => {
-    const { battleId, username } = data;
+    const { battleId, username, userId } = data;
     socket.join(battleId);
     
+    // Store player info
+    if (!activeBattles.has(battleId)) {
+      activeBattles.set(battleId, []);
+    }
+    
+    const battlePlayers = activeBattles.get(battleId);
+    const existingPlayer = battlePlayers.find(p => p.userId === userId);
+    
+    if (!existingPlayer) {
+      battlePlayers.push({ userId, username, socketId: socket.id });
+      activeBattles.set(battleId, battlePlayers);
+    }
+    
     // Notify other players in the room
-    socket.to(battleId).emit("opponent_joined", { username });
+    socket.to(battleId).emit("opponent_joined", { username, userId });
     console.log(`User ${username} joined battle ${battleId}`);
+    
+    // Emit updated player list to all players in the room
+    io.to(battleId).emit("battle_players_updated", {
+      players: battlePlayers,
+      playerCount: battlePlayers.length
+    });
+    
+    console.log(`Battle ${battleId} now has ${battlePlayers.length} players:`, battlePlayers.map(p => p.username));
   });
 
   socket.on("question_answered", (data) => {
@@ -37,10 +61,34 @@ io.on("connection", (socket) => {
     const { battleId, winner } = data;
     io.to(battleId).emit("battle_ended", { winner });
     console.log(`Battle ${battleId} ended with winner: ${winner}`);
+    
+    // Clean up battle data
+    activeBattles.delete(battleId);
   });
 
   socket.on("disconnect", () => {
     console.log("🧠 Client disconnected: " + socket.id);
+    
+    // Remove player from active battles
+    for (const [battleId, players] of activeBattles.entries()) {
+      const playerIndex = players.findIndex(p => p.socketId === socket.id);
+      if (playerIndex !== -1) {
+        const removedPlayer = players.splice(playerIndex, 1)[0];
+        console.log(`User ${removedPlayer.username} left battle ${battleId}`);
+        
+        // Update remaining players
+        if (players.length > 0) {
+          io.to(battleId).emit("battle_players_updated", {
+            players: players,
+            playerCount: players.length
+          });
+        } else {
+          // No players left, clean up
+          activeBattles.delete(battleId);
+        }
+        break;
+      }
+    }
   });
 });
 

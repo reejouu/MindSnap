@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Copy, Users, Clock, Wifi, CheckCircle, Share2, AlertCircle } from "lucide-react"
-import { battleService, Battle } from "@/lib/battleService"
+import { battleService, Battle, BattlePlayer } from "@/lib/battleService"
 
 interface Player {
   id: string
@@ -29,6 +29,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
   const [waitingTime, setWaitingTime] = useState(0)
   const [battle, setBattle] = useState<Battle | null>(null)
   const [error, setError] = useState<string>("")
+  const [socketPlayers, setSocketPlayers] = useState<BattlePlayer[]>([])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,16 +43,32 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
   useEffect(() => {
     const handleOpponentJoined = (event: CustomEvent) => {
       console.log("Opponent joined:", event.detail)
-      // You can add logic here to handle opponent joining
+      const { username, userId } = event.detail
+      
+      // Create opponent player object
+      const opponentPlayer: Player = {
+        id: userId,
+        name: username,
+        avatar: "🧠",
+        rank: Math.floor(Math.random() * 1000) + 500,
+        wins: Math.floor(Math.random() * 50),
+      }
+      
+      if (onOpponentJoined) {
+        onOpponentJoined(opponentPlayer)
+      }
     }
 
-    const handleBattleUpdated = (event: CustomEvent) => {
-      const updatedBattle = event.detail as Battle
-      setBattle(updatedBattle)
+    const handleBattlePlayersUpdated = (event: CustomEvent) => {
+      console.log("Battle players updated:", event.detail)
+      const { players, playerCount } = event.detail
+      setSocketPlayers(players)
       
-      // Check if opponent joined
-      if (updatedBattle.players.length === 2 && onOpponentJoined) {
-        const opponent = updatedBattle.players.find(p => p.userId !== battleService.getCurrentUser()?.id)
+      // If we have 2 players and haven't triggered opponent joined yet
+      if (playerCount === 2 && onOpponentJoined) {
+        const currentUser = battleService.getCurrentUser()
+        const opponent = players.find(p => p.userId !== currentUser?.id)
+        
         if (opponent) {
           const opponentPlayer: Player = {
             id: opponent.userId,
@@ -65,12 +82,18 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       }
     }
 
+    const handleBattleUpdated = (event: CustomEvent) => {
+      const updatedBattle = event.detail as Battle
+      setBattle(updatedBattle)
+    }
+
     const handleBattleEnded = (event: CustomEvent) => {
       console.log("Battle ended:", event.detail)
     }
 
     // Add event listeners
     window.addEventListener("opponentJoined", handleOpponentJoined as EventListener)
+    window.addEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
     window.addEventListener("battleUpdated", handleBattleUpdated as EventListener)
     window.addEventListener("battleEnded", handleBattleEnded as EventListener)
 
@@ -89,6 +112,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
 
     return () => {
       window.removeEventListener("opponentJoined", handleOpponentJoined as EventListener)
+      window.removeEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
       window.removeEventListener("battleUpdated", handleBattleUpdated as EventListener)
       window.removeEventListener("battleEnded", handleBattleEnded as EventListener)
     }
@@ -110,8 +134,10 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  const currentPlayers = battle?.players || []
+  // Use socket players if available, otherwise fall back to battle players
+  const currentPlayers = socketPlayers.length > 0 ? socketPlayers : (battle?.players || [])
   const playerCount = currentPlayers.length
+  const currentUser = battleService.getCurrentUser()
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -226,7 +252,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
               {currentPlayers.length > 1 ? (
                 // Show actual opponent
                 currentPlayers
-                  .filter(p => p.userId !== battleService.getCurrentUser()?.id)
+                  .filter(p => p.userId !== currentUser?.id)
                   .map((opponent, index) => (
                     <motion.div
                       key={opponent.userId}

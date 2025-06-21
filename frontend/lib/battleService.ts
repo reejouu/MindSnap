@@ -18,6 +18,12 @@ export interface User {
   name: string;
 }
 
+export interface BattlePlayer {
+  userId: string;
+  username: string;
+  socketId: string;
+}
+
 class BattleService {
   private socket: Socket | null = null;
   private currentBattle: Battle | null = null;
@@ -52,10 +58,15 @@ class BattleService {
       console.error("Socket connection error:", error);
     });
 
-    this.socket.on("opponent_joined", (data: { username: string }) => {
+    this.socket.on("opponent_joined", (data: { username: string; userId: string }) => {
       console.log("Opponent joined:", data.username);
       // Emit custom event for React components
       window.dispatchEvent(new CustomEvent("opponentJoined", { detail: data }));
+    });
+
+    this.socket.on("battle_players_updated", (data: { players: BattlePlayer[]; playerCount: number }) => {
+      console.log("Battle players updated:", data.players);
+      window.dispatchEvent(new CustomEvent("battlePlayersUpdated", { detail: data }));
     });
 
     this.socket.on("battle_updated", (battle: Battle) => {
@@ -88,7 +99,11 @@ class BattleService {
 
       // Join socket room
       if (this.socket) {
-        this.socket.emit("join_battle", { battleId: battle._id, username: user.name });
+        this.socket.emit("join_battle", { 
+          battleId: battle._id, 
+          username: user.name,
+          userId: user.id 
+        });
       }
 
       return battle;
@@ -118,7 +133,11 @@ class BattleService {
 
       // Join socket room
       if (this.socket) {
-        this.socket.emit("join_battle", { battleId: battle._id, username: user.name });
+        this.socket.emit("join_battle", { 
+          battleId: battle._id, 
+          username: user.name,
+          userId: user.id 
+        });
       }
 
       return battle;
