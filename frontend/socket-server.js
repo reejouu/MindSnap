@@ -83,10 +83,12 @@ io.on("connection", (socket) => {
       console.log(`🚀 Emitting battle_ready to ALL players in ${battleId}:`, battlePlayers.map(p => p.username));
       
       // Use io.to() to ensure all players receive the battle ready event
-      io.to(battleId).emit("battle_ready", {
-        players: battlePlayers,
-        battleId: battleId
-      });
+      setTimeout(() => {
+        io.to(battleId).emit("battle_ready", {
+          players: battlePlayers,
+          battleId: battleId
+        });
+      }, 500); // Small delay to ensure clients are ready
     }
   });
 

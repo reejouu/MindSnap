@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 // Update the import path if the file is located elsewhere, for example:
 import { TopicSelector } from "../../components/battle/TopicSelector"
@@ -132,10 +132,10 @@ export default function BattleRoyalePage() {
     setBattleState("mode-selection")
   }
 
-  const handleBattleStart = (generatedQuiz: any) => {
+  const handleBattleStart = useCallback((generatedQuiz: any) => {
     setQuiz(generatedQuiz)
     setBattleState("battle-quiz")
-  }
+  }, [])
 
   const handleCreateRoom = (generatedRoomId: string) => {
     setRoomId(generatedRoomId)
