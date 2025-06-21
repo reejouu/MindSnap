@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { spawn } from "child_process"
 import path from "path"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { text, genre } = await request.json()
 
@@ -16,12 +16,11 @@ export async function POST(request: NextRequest) {
     console.log("Text length:", text.length)
     console.log("Genre:", normalizedGenre)
 
-    return new Promise((resolve) => {
+    return new Promise<NextResponse>((resolve) => {
       let outputData = ""
       let errorData = ""
 
       const pythonProcess = spawn("python", [scriptPath])
-
       pythonProcess.stdin.write(JSON.stringify({ text, genre: normalizedGenre }) + "\n")
       pythonProcess.stdin.end()
 

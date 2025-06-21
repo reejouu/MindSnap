@@ -4,7 +4,7 @@ import { writeFile } from "fs/promises"
 import { join } from "path"
 import { tmpdir } from "os"
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const formData = await request.formData()
     const file = formData.get("file") as File
@@ -28,12 +28,11 @@ export async function POST(request: NextRequest) {
     console.log("Python script path:", scriptPath)
     console.log("Genre:", normalizedGenre)
 
-    return new Promise((resolve) => {
+    return new Promise<NextResponse>((resolve) => {
       let outputData = ""
       let errorData = ""
 
       const pythonProcess = spawn("python", [scriptPath])
-
       pythonProcess.stdin.write(JSON.stringify({ pdfPath: tempFilePath, genre: normalizedGenre }) + "\n")
       pythonProcess.stdin.end()
 

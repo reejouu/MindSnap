@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { spawn } from "child_process";
-import { writeFile } from "fs/promises";
+import { writeFile, rm } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  let tempFilePath: string | null = null;
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -18,17 +19,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
-    const tempFilePath = join(tmpdir(), file.name);
+    tempFilePath = join(tmpdir(), `upload_${Date.now()}_${file.name}`);
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(tempFilePath, buffer);
-    console.log("Image written to temp file:", tempFilePath);
 
     const normalizedGenre = genre ? genre.toLowerCase().trim() : null;
     const scriptPath = join(process.cwd(), "..", "agent", "flashcard_agent_image.py");
-    console.log("Python script path:", scriptPath);
-    console.log("Genre:", normalizedGenre);
 
-    return new Promise((resolve) => {
+    const pythonOutput = await new Promise<string>((resolve, reject) => {
       let outputData = "";
       let errorData = "";
 
@@ -38,68 +36,65 @@ export async function POST(request: NextRequest) {
       pythonProcess.stdin.end();
 
       pythonProcess.stdout.on("data", (data) => {
-        const chunk = data.toString();
-        console.log("Python stdout chunk:", chunk);
-        outputData += chunk;
+        outputData += data.toString();
       });
 
       pythonProcess.stderr.on("data", (data) => {
-        const chunk = data.toString();
-        console.error("Python stderr chunk:", chunk);
-        errorData += chunk;
+        errorData += data.toString();
       });
 
       pythonProcess.on("close", (code) => {
-        console.log("Python process exited with code:", code);
-        console.log("Final output data:", outputData);
-        console.log("Final error data:", errorData);
-
-        if (code !== 0) {
+        if (code === 0) {
+          resolve(outputData);
+        } else {
           console.error("Python script error:", errorData);
-          resolve(
-            NextResponse.json(
-              { error: "Failed to generate flashcards", details: errorData },
-              { status: 500 }
-            )
-          );
-          return;
-        }
-
-        try {
-          const cleanOutput = outputData.trim();
-          const response = JSON.parse(cleanOutput);
-
-          if (response.error) {
-            resolve(
-              NextResponse.json(
-                { error: response.error, details: response.details },
-                { status: 500 }
-              )
-            );
-            return;
-          }
-
-          if (!response.flashcards || !Array.isArray(response.flashcards)) {
-            throw new Error("Invalid flashcard data structure");
-          }
-
-          resolve(NextResponse.json(response));
-        } catch (error) {
-          console.error("Failed to parse Python output:", outputData);
-          resolve(
-            NextResponse.json(
-              { error: "Invalid response from flashcard generator", details: outputData },
-              { status: 500 }
-            )
-          );
+          reject(new Error(`Python script exited with code ${code}: ${errorData}`));
         }
       });
+
+      pythonProcess.on("error", (err) => {
+        console.error("Failed to start Python process:", err);
+        reject(err);
+      });
     });
+
+    try {
+      const cleanOutput = pythonOutput.trim();
+      const response = JSON.parse(cleanOutput);
+
+      if (response.error) {
+        return NextResponse.json(
+          { error: response.error, details: response.details },
+          { status: 500 }
+        );
+      }
+
+      if (!response.flashcards || !Array.isArray(response.flashcards)) {
+        throw new Error("Invalid flashcard data structure");
+      }
+
+      return NextResponse.json(response);
+    } catch (error) {
+      console.error("Failed to parse Python output:", pythonOutput);
+      return NextResponse.json(
+        { error: "Invalid response from flashcard generator", details: pythonOutput },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("API route error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { error: "Internal server error", details: errorMessage },
       { status: 500 }
     );
+  } finally {
+    if (tempFilePath) {
+      try {
+        await rm(tempFilePath);
+      } catch (cleanupError) {
+        console.error("Failed to remove temporary file:", cleanupError);
+      }
+    }
   }
 } 

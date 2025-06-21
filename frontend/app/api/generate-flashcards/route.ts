@@ -1,8 +1,9 @@
+
 import { NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import path from 'path';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const { youtubeLink, genre } = await request.json();
 
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     const normalizedGenre = genre ? genre.toLowerCase().trim() : null;
     console.log(`Genre received in main.py: ${normalizedGenre}`);
 
-    return new Promise((resolve) => {
+    return new Promise<NextResponse>((resolve) => {
       let outputData = '';
       let errorData = '';
 
@@ -107,4 +108,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

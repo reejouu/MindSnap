@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -9,7 +8,7 @@ export default function LearnRedirect() {
 
   useEffect(() => {
     // Get session from URL params or default to javascript-fundamentals
-    const session = searchParams.get("session") || "javascript-fundamentals"
+    const session = searchParams?.get("session") || "javascript-fundamentals"
     router.replace(`/learn/${session}`)
   }, [router, searchParams])
 

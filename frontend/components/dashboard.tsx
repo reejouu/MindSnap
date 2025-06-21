@@ -75,6 +75,7 @@ export default function Dashboard({
     name: string
     size: string
   } | null>(null)
+  const [pdfActionLoading, setPdfActionLoading] = useState<"generate" | "highlight" | null>(null)
   const [highlightedPdf, setHighlightedPdf] = useState<{ name: string; url: string } | null>(null)
   const [textInput, setTextInput] = useState("")
   const [isRecording, setIsRecording] = useState(false)
@@ -436,13 +437,16 @@ export default function Dashboard({
       toast.error("Please upload a PDF file first")
       return
     }
-
-    // Show genre selection modal first
-    setPendingGeneration({
-      type: "pdf",
-      data: { pdfFile },
-    })
-    setShowGenreModal(true)
+    setPdfActionLoading("generate")
+    try {
+      setPendingGeneration({
+        type: "pdf",
+        data: { pdfFile },
+      })
+      setShowGenreModal(true)
+    } finally {
+      setPdfActionLoading(null)
+    }
   }
 
   const handleGenerateCardsFromImage = async () => {
@@ -515,7 +519,7 @@ export default function Dashboard({
       // Format the flashcards
       const formattedCards = data.flashcards.map((card: any) => ({
         id: card.id.toString(),
-        title: card.content.split(".")[0] || `Flashcard ${card.id}`,
+        title: card.title,
         content: card.content,
         type: "learning" as const,
       }))
@@ -610,7 +614,7 @@ export default function Dashboard({
       // Format the flashcards
       const formattedCards = data.flashcards.map((card: any) => ({
         id: card.id.toString(),
-        title: card.content.split(".")[0] || `Flashcard ${card.id}`,
+        title: card.title,
         content: card.content,
         type: "learning" as const,
         timeSpent: 0,
@@ -674,9 +678,7 @@ export default function Dashboard({
       toast.error("Please upload a PDF file first")
       return
     }
-
-    setLoading(true)
-    setLoadingType("pdf")
+    setPdfActionLoading("highlight")
     try {
       const formData = new FormData()
       formData.append("file", pdfFile)
@@ -704,8 +706,7 @@ export default function Dashboard({
       console.error("Error highlighting PDF:", error)
       toast.error("Failed to highlight PDF")
     } finally {
-      setLoading(false)
-      setLoadingType(null)
+      setPdfActionLoading(null)
     }
   }
 
@@ -961,9 +962,9 @@ export default function Dashboard({
                                   <Button
                                     className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                                     onClick={handleGenerateCardsFromPdf}
-                                    disabled={loading}
+                                    disabled={pdfActionLoading !== null}
                                   >
-                                    {loading && loadingType === "pdf" ? (
+                                    {pdfActionLoading === "generate" ? (
                                       <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                         Generating Cards...
@@ -978,9 +979,9 @@ export default function Dashboard({
                                   <Button
                                     className="w-full bg-green-500 hover:bg-green-600 text-white"
                                     onClick={handleHighlightAndGeneratePdf}
-                                    disabled={loading}
+                                    disabled={pdfActionLoading !== null}
                                   >
-                                    {loading && loadingType === "pdf" ? (
+                                    {pdfActionLoading === "highlight" ? (
                                       <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                         Highlighting...
@@ -1335,3 +1336,4 @@ export default function Dashboard({
     </div>
   )
 }
+
