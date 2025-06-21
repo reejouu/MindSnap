@@ -336,6 +336,27 @@ class BattleService {
     this.currentBattle = battle;
   }
 
+  // Manually refresh battle data and update current battle
+  async refreshBattleData(battleId: string): Promise<Battle | null> {
+    try {
+      console.log("🔄 Manually refreshing battle data for:", battleId);
+      const updatedBattle = await this.getBattle(battleId);
+      if (updatedBattle) {
+        this.currentBattle = updatedBattle;
+        console.log("🔄 Updated current battle:", updatedBattle);
+        
+        // Emit battle updated event
+        window.dispatchEvent(new CustomEvent("battleUpdated", { detail: updatedBattle }));
+        
+        return updatedBattle;
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ Error refreshing battle data:", error);
+      return null;
+    }
+  }
+
   // Disconnect socket
   disconnect() {
     if (this.socket) {
