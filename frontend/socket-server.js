@@ -124,6 +124,125 @@ io.on("connection", (socket) => {
     console.log(`User ${user} submitted score ${score} for battle ${battleId}`);
   });
 
+  // NEW: Handle player quiz completion
+  socket.on("player_completed_quiz", (data) => {
+    const { battleId, userId, username, score, totalQuestions } = data;
+    console.log(`🎯 Player ${username} completed quiz with score ${score}/${totalQuestions}`);
+    
+    // Store the score temporarily
+    if (!activeBattles.has(battleId)) {
+      activeBattles.set(battleId, []);
+      console.log(`📝 Created new battle entry for ${battleId}`);
+    }
+    
+    const battle = activeBattles.get(battleId);
+    let player = battle.find(p => p.userId === userId);
+    
+    // If player not found, add them to the battle
+    if (!player) {
+      console.log(`📝 Player ${username} not found in battle, adding them...`);
+      player = { userId, username, socketId: socket.id };
+      battle.push(player);
+    }
+    
+    // Update player score
+    player.score = score;
+    player.totalQuestions = totalQuestions;
+    console.log(`📊 Updated player ${username} score: ${score}/${totalQuestions}`);
+    
+    // Check if both players completed
+    const completedPlayers = battle.filter(p => p.score !== undefined);
+    console.log(`📊 Completed players: ${completedPlayers.length}/2`);
+    console.log(`📊 All players in battle:`, battle.map(p => ({ username: p.username, score: p.score })));
+    
+    if (completedPlayers.length === 2) {
+      // Both players completed - determine winner
+      const [player1, player2] = completedPlayers;
+      const player1Accuracy = (player1.score / player1.totalQuestions) * 100;
+      const player2Accuracy = (player2.score / player2.totalQuestions) * 100;
+      
+      let winner = null;
+      let isDraw = false;
+      
+      if (player1Accuracy > player2Accuracy) {
+        winner = player1;
+      } else if (player2Accuracy > player1Accuracy) {
+        winner = player2;
+      } else {
+        // If accuracy is the same, check total score
+        if (player1.score > player2.score) {
+          winner = player1;
+        } else if (player2.score > player1.score) {
+          winner = player2;
+        } else {
+          isDraw = true;
+        }
+      }
+      
+      console.log(`🏆 Battle ${battleId} completed!`);
+      console.log(`🏆 Player 1 (${player1.username}): ${player1.score}/${player1.totalQuestions} (${player1Accuracy.toFixed(1)}%)`);
+      console.log(`🏆 Player 2 (${player2.username}): ${player2.score}/${player2.totalQuestions} (${player2Accuracy.toFixed(1)}%)`);
+      console.log(`🏆 Winner: ${isDraw ? 'DRAW' : winner.username}`);
+      
+      // Ensure we have both players' complete data
+      const finalPlayers = [
+        {
+          userId: player1.userId,
+          username: player1.username,
+          score: player1.score,
+          totalQuestions: player1.totalQuestions
+        },
+        {
+          userId: player2.userId,
+          username: player2.username,
+          score: player2.score,
+          totalQuestions: player2.totalQuestions
+        }
+      ];
+      
+      // Double-check: ensure all players with scores are included
+      const allPlayersWithScores = battle.filter(p => p.score !== undefined).map(p => ({
+        userId: p.userId,
+        username: p.username,
+        score: p.score,
+        totalQuestions: p.totalQuestions
+      }));
+      
+      // Use the more complete data
+      const finalPlayersData = allPlayersWithScores.length >= 2 ? allPlayersWithScores : finalPlayers;
+      
+      console.log(`🏆 Final players data:`, finalPlayersData);
+      
+      // Create the results object with detailed logging
+      const resultsData = {
+        players: finalPlayersData,
+        winner: winner,
+        isDraw: isDraw,
+        player1Accuracy: player1Accuracy,
+        player2Accuracy: player2Accuracy
+      };
+      
+      console.log(`🏆 Sending battle results to room ${battleId}:`, JSON.stringify(resultsData, null, 2));
+      
+      // Emit results to both players
+      io.to(battleId).emit("battle_results", resultsData);
+      
+      // Clean up battle data after a delay
+      setTimeout(() => {
+        activeBattles.delete(battleId);
+        console.log(`🧹 Cleaned up battle ${battleId}`);
+      }, 30000); // 30 seconds delay
+    } else {
+      // First player completed - notify opponent
+      console.log(`⏳ First player completed, waiting for opponent...`);
+      socket.to(battleId).emit("opponent_completed", {
+        username: username,
+        score: score,
+        totalQuestions: totalQuestions
+      });
+    }
+  });
+
   socket.on("end_battle", async (data) => {
     const { battleId, winner } = data;
     io.to(battleId).emit("battle_ended", { winner });

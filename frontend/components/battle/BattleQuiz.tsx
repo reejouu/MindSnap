@@ -27,10 +27,15 @@ import {
   type BattleQuiz as BattleQuizType, 
   BattleQuizQuestion,
 } from "@/lib/battleQuizService"
+import { battleService } from "@/lib/battleService"
 
 interface BattleQuizProps {
   quiz: BattleQuizType
   onQuizComplete?: (score: number, totalQuestions: number) => void
+  battleId?: string
+  currentUserId?: string
+  currentUsername?: string
+  opponentCompleted?: any
 }
 
 interface AnswerState {
@@ -41,171 +46,19 @@ interface AnswerState {
   }
 }
 
-interface WinnerModalProps {
-  isOpen: boolean
-  onClose: () => void
-  score: number
-  totalQuestions: number
-  timeSpent: number
-  topic: string
-  onPlayAgain?: () => void
-  onBackToLobby?: () => void
-}
-
-function WinnerModal({ 
-  isOpen, 
-  onClose, 
-  score, 
-  totalQuestions, 
-  timeSpent, 
-  topic,
-  onPlayAgain,
-  onBackToLobby 
-}: WinnerModalProps) {
-  const accuracy = Math.round((score / totalQuestions) * 100)
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.8, opacity: 0 }}
-          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-8 space-y-8">
-            {/* Winner Trophy */}
-            <div className="text-center space-y-6">
-              <motion.div
-                animate={{
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                className="w-32 h-32 mx-auto bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-2xl"
-              >
-                <Trophy className="w-16 h-16 text-white" />
-              </motion.div>
-
-              <div className="space-y-4">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                  🏆 Quiz Complete! 🏆
-                </h1>
-                <p className="text-xl text-gray-400">
-                  You've conquered the <span className="text-blue-400 font-semibold">{topic}</span> challenge!
-                </p>
-              </div>
-            </div>
-
-            {/* Score Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-3 gap-4"
-            >
-              <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-                <div className="text-3xl font-bold text-green-400">{score}/{totalQuestions}</div>
-                <div className="text-sm text-gray-400">Correct</div>
-              </div>
-              <div className="text-center p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-                <div className="text-3xl font-bold text-blue-400">{accuracy}%</div>
-                <div className="text-sm text-gray-400">Accuracy</div>
-              </div>
-              <div className="text-center p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
-                <div className="text-3xl font-bold text-purple-400">{formatTime(timeSpent)}</div>
-                <div className="text-sm text-gray-400">Time</div>
-              </div>
-            </motion.div>
-
-            {/* Performance Message */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-center p-6 bg-gray-800/30 rounded-lg border border-gray-700/30"
-            >
-              <h3 className="text-xl font-bold text-white mb-2">
-                {accuracy >= 80 ? "🎯 Excellent Performance!" :
-                 accuracy >= 60 ? "👍 Good Job!" :
-                 accuracy >= 40 ? "💪 Keep Learning!" :
-                 "📚 Room for Improvement!"}
-              </h3>
-              <p className="text-gray-400">
-                {accuracy >= 80 ? "You're a master of this topic!" :
-                 accuracy >= 60 ? "You have a solid understanding!" :
-                 accuracy >= 40 ? "You're on the right track!" :
-                 "Keep practicing to improve your knowledge!"}
-              </p>
-            </motion.div>
-
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="flex justify-center space-x-4"
-            >
-              {onPlayAgain && (
-                <Button
-                  onClick={onPlayAgain}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3"
-                >
-                  <Zap className="w-5 h-5 mr-2" />
-                  Play Again
-                </Button>
-              )}
-              
-              {onBackToLobby && (
-                <Button
-                  onClick={onBackToLobby}
-                  variant="outline"
-                  className="border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white px-6 py-3"
-                >
-                  <Trophy className="w-5 h-5 mr-2" />
-                  Back to Lobby
-                </Button>
-              )}
-              
-              <Button
-                onClick={onClose}
-                variant="outline"
-                className="border-gray-500 text-gray-400 hover:bg-gray-500 hover:text-white px-6 py-3"
-              >
-                Close
-              </Button>
-            </motion.div>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  )
-}
-
 export function BattleQuiz({ 
   quiz,
-  onQuizComplete 
+  onQuizComplete,
+  battleId,
+  currentUserId,
+  currentUsername,
+  opponentCompleted
 }: BattleQuizProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<AnswerState>({})
   const [startTime, setStartTime] = useState<number>(Date.now())
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [winnerModalOpen, setWinnerModalOpen] = useState(false)
   const [finalScore, setFinalScore] = useState({ score: 0, totalQuestions: 0, timeSpent: 0 })
 
   useEffect(() => {
@@ -294,10 +147,56 @@ export function BattleQuiz({
       
       console.log("🎯 Final score:", score, "out of", totalQuestions)
       
+      // Submit score to database if battleId is provided
+      if (battleId && currentUserId) {
+        try {
+          console.log("📊 Submitting score to database:", { battleId, currentUserId, score })
+          const response = await fetch('/api/battle/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              battleId: battleId,
+              userId: currentUserId,
+              score: score
+            })
+          })
+          
+          if (response.ok) {
+            console.log("✅ Score submitted to database successfully")
+          } else {
+            console.error("❌ Failed to submit score to database")
+          }
+        } catch (error) {
+          console.error("❌ Error submitting score:", error)
+        }
+      }
+      
+      // Emit socket event to notify opponent and trigger battle results
+      if (battleId && currentUserId && currentUsername) {
+        console.log("🎯 Emitting player_completed_quiz event:", {
+          battleId,
+          currentUserId,
+          currentUsername,
+          score,
+          totalQuestions
+        })
+        battleService.emitPlayerCompletedQuiz(
+          battleId,
+          currentUserId,
+          currentUsername,
+          score,
+          totalQuestions
+        )
+      }
+      
       // Call onQuizComplete for parent to handle comparison
       if (onQuizComplete) {
         onQuizComplete(score, totalQuestions)
       }
+      
+      // Set final score and stop submitting state
+      setFinalScore({ score, totalQuestions, timeSpent: totalTimeSpent })
+      setIsSubmitting(false)
     }
   }
 
@@ -379,6 +278,43 @@ export function BattleQuiz({
     )
   }
 
+  // Show completion state when quiz is finished
+  if (quizCompleted && !isSubmitting) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center min-h-[400px]"
+      >
+        <div className="text-center space-y-6">
+          <motion.div
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+            className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center"
+          >
+            <Target className="w-12 h-12 text-blue-400" />
+          </motion.div>
+          
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-white">Quiz Completed! 🎯</h2>
+            <p className="text-gray-400">Your score: {finalScore.score}/{finalScore.totalQuestions}</p>
+            <p className="text-gray-400">Waiting for opponent to finish...</p>
+          </div>
+          
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+            className="text-blue-400 text-lg font-semibold"
+          >
+            Battle results coming soon...
+          </motion.div>
+        </div>
+      </motion.div>
+    )
+  }
+
   const currentQuestion = getCurrentQuestion()
   if (!currentQuestion) return null
 
@@ -417,6 +353,22 @@ export function BattleQuiz({
             {getScore()}/{quiz.total_questions} Correct
           </Badge>
         </div>
+
+        {/* Opponent Status Indicator */}
+        {opponentCompleted && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg"
+          >
+            <div className="flex items-center justify-center space-x-2 text-blue-400">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium">
+                {opponentCompleted.username} finished with {opponentCompleted.score}/{opponentCompleted.totalQuestions} correct
+              </span>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Progress Bar */}

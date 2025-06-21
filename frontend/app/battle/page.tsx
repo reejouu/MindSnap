@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button"
 import { Swords, Trophy, Users, Zap, Target, Crown, ArrowLeft } from "lucide-react"
 import { battleService, User } from "@/lib/battleService"
 import { BattleQuiz } from "../../components/battle/BattleQuiz"
+import { BattleResultsModal } from "../../components/battle/BattleResultsModal"
+import { toast } from "sonner"
 
 type BattleState =
   | "mode-selection"
@@ -51,6 +53,11 @@ export default function BattleRoyalePage() {
     wins: 23,
   })
   const battleStartedTriggeredRef = useRef(false)
+  const [battleResults, setBattleResults] = useState<any>(null)
+  const [opponentCompleted, setOpponentCompleted] = useState<any>(null)
+  const [opponentCompletedStatus, setOpponentCompletedStatus] = useState<any>(null)
+  const [quizCompleted, setQuizCompleted] = useState(false)
+  const [quizScore, setQuizScore] = useState<any>(null)
 
   // Cleanup on unmount
   useEffect(() => {
@@ -130,11 +137,71 @@ export default function BattleRoyalePage() {
     window.addEventListener("battleReady", handleBattleReady as EventListener)
     window.addEventListener("battleStarted", handleBattleStarted as EventListener)
 
+    // NEW: Handle battle results when both players complete
+    const handleBattleResults = (event: CustomEvent) => {
+      console.log("🏆 Battle results received:", event.detail)
+      setBattleResults(event.detail)
+      setQuizCompleted(false) // Reset quiz completed state
+    }
+
+    // NEW: Handle opponent completion notification
+    const handleOpponentCompleted = (event: CustomEvent) => {
+      console.log("⏳ Opponent completed quiz:", event.detail)
+      setOpponentCompleted(event.detail)
+      setOpponentCompletedStatus(event.detail) // Persistent status for BattleQuiz
+      
+      // Store opponent data for potential fallback use
+      const opponentData = {
+        userId: 'opponent',
+        username: event.detail.username,
+        score: event.detail.score,
+        totalQuestions: event.detail.totalQuestions
+      };
+      localStorage.setItem('battle_opponent_data', JSON.stringify(opponentData));
+      
+      // Auto-dismiss the notification after 5 seconds
+      setTimeout(() => {
+        setOpponentCompleted(null)
+      }, 5000)
+    }
+
+    window.addEventListener("battleResults", handleBattleResults as EventListener)
+    window.addEventListener("opponentCompleted", handleOpponentCompleted as EventListener)
+
     return () => {
       window.removeEventListener("battleReady", handleBattleReady as EventListener)
       window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
+      window.removeEventListener("battleResults", handleBattleResults as EventListener)
+      window.removeEventListener("opponentCompleted", handleOpponentCompleted as EventListener)
     }
   }, [opponent])
+
+  // Fallback timeout for battle results (in case socket events fail)
+  useEffect(() => {
+    if (quizCompleted && quizScore && !battleResults) {
+      const timeout = setTimeout(() => {
+        console.log("⏰ Fallback timeout triggered - showing individual results")
+        // Create a fallback result showing individual performance
+        setBattleResults({
+          players: [
+            {
+              userId: currentPlayer.id,
+              username: currentPlayer.name,
+              score: quizScore.score,
+              totalQuestions: quizScore.totalQuestions
+            }
+          ],
+          winner: null,
+          isDraw: false,
+          player1Accuracy: (quizScore.score / quizScore.totalQuestions) * 100,
+          player2Accuracy: 0,
+          isFallback: true
+        })
+      }, 15000) // 15 seconds timeout
+
+      return () => clearTimeout(timeout)
+    }
+  }, [quizCompleted, quizScore, battleResults, currentPlayer])
 
   // Auto transition to VS intro after match found
   useEffect(() => {
@@ -370,15 +437,94 @@ export default function BattleRoyalePage() {
             </motion.div>
           )}
 
-          {battleState === "battle-quiz" && quiz && quiz.quiz && quiz.quiz.length > 0 && (
+          {battleState === "battle-quiz" && quiz && (
+            <BattleQuiz
+              quiz={quiz}
+              battleId={roomId}
+              currentUserId={currentPlayer.id}
+              currentUsername={currentPlayer.name}
+              opponentCompleted={opponentCompletedStatus}
+              onQuizComplete={(score, totalQuestions) => {
+                console.log("🎯 Quiz completed with score:", score, "/", totalQuestions)
+                setQuizCompleted(true)
+                setQuizScore({ score, totalQuestions })
+              }}
+            />
+          )}
+
+          {/* Battle Results Modal */}
+          {battleResults && (
+            <BattleResultsModal
+              isOpen={true}
+              onClose={() => {
+                setBattleResults(null)
+                setOpponentCompleted(null)
+                setOpponentCompletedStatus(null)
+                setQuizCompleted(false)
+                setQuizScore(null)
+              }}
+              results={battleResults}
+              currentUserId={currentPlayer.id}
+              onPlayAgain={() => {
+                setBattleResults(null)
+                setOpponentCompleted(null)
+                setOpponentCompletedStatus(null)
+                setQuizCompleted(false)
+                setQuizScore(null)
+                setBattleState("mode-selection")
+                setSelectedTopic("")
+                setRoomId("")
+                setOpponent(null)
+                setQuiz(null)
+                battleService.disconnect()
+              }}
+              onBackToLobby={() => {
+                setBattleResults(null)
+                setOpponentCompleted(null)
+                setOpponentCompletedStatus(null)
+                setQuizCompleted(false)
+                setQuizScore(null)
+                setBattleState("mode-selection")
+                setSelectedTopic("")
+                setRoomId("")
+                setOpponent(null)
+                setQuiz(null)
+                battleService.disconnect()
+              }}
+            />
+          )}
+
+          {/* Opponent Completed Notification - Non-blocking banner */}
+          {opponentCompleted && !battleResults && (
             <motion.div
-              key={`battle-quiz-${roomId}`}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4"
             >
-              <BattleQuiz quiz={quiz} onQuizComplete={(score, total) => console.log(`Quiz complete! Score: ${score}/${total}`)} />
+              <div className="bg-gradient-to-r from-blue-500/90 to-purple-500/90 backdrop-blur-sm rounded-xl border border-blue-400/30 p-4 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm">⏳</span>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-semibold text-sm">Opponent Finished!</h3>
+                      <p className="text-blue-100 text-xs">
+                        {opponentCompleted.username} completed with {opponentCompleted.score}/{opponentCompleted.totalQuestions} correct
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setOpponentCompleted(null)}
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

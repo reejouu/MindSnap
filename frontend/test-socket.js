@@ -22,11 +22,35 @@ socket.on('connect', () => {
     battleId: 'test-battle-123'
   });
   
+  // Test the new player_completed_quiz event
+  setTimeout(() => {
+    console.log('🎯 Testing player_completed_quiz event...');
+    socket.emit('player_completed_quiz', {
+      battleId: 'test-battle-123',
+      userId: 'user-123',
+      username: 'TestUser',
+      score: 8,
+      totalQuestions: 10
+    });
+  }, 1000);
+  
+  // Test second player completing
+  setTimeout(() => {
+    console.log('🎯 Testing second player completion...');
+    socket.emit('player_completed_quiz', {
+      battleId: 'test-battle-123',
+      userId: 'user-456',
+      username: 'OpponentUser',
+      score: 7,
+      totalQuestions: 10
+    });
+  }, 2000);
+  
   setTimeout(() => {
     console.log('✅ Socket test completed');
     socket.disconnect();
     process.exit(0);
-  }, 2000);
+  }, 5000);
 });
 
 socket.on('connect_error', (error) => {
@@ -42,7 +66,21 @@ socket.on('battle_started', (data) => {
   console.log('⚔️ Received battle started:', data);
 });
 
+// NEW: Listen for opponent completion
+socket.on('opponent_completed', (data) => {
+  console.log('⏳ Opponent completed quiz:', data);
+});
+
+// NEW: Listen for battle results
+socket.on('battle_results', (data) => {
+  console.log('🏆 Battle results received:', data);
+  console.log('🏆 Winner:', data.winner ? data.winner.username : 'DRAW');
+  console.log('🏆 Is Draw:', data.isDraw);
+  console.log('🏆 Player 1 Accuracy:', data.player1Accuracy?.toFixed(1) + '%');
+  console.log('🏆 Player 2 Accuracy:', data.player2Accuracy?.toFixed(1) + '%');
+});
+
 setTimeout(() => {
   console.error('❌ Socket test timeout');
   process.exit(1);
-}, 5000); 
+}, 10000); 

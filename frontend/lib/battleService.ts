@@ -117,6 +117,28 @@ class BattleService {
       console.log("🎯 Quiz completed event received:", data);
       window.dispatchEvent(new CustomEvent("playerCompleted", { detail: data }));
     });
+
+    // NEW: Handle battle results when both players complete
+    this.socket.on("battle_results", (data: { 
+      players: Array<{userId: string; username: string; score: number; totalQuestions: number}>; 
+      winner: any; 
+      isDraw: boolean;
+      player1Accuracy: number;
+      player2Accuracy: number;
+    }) => {
+      console.log("🏆 Battle results received:", data);
+      window.dispatchEvent(new CustomEvent("battleResults", { detail: data }));
+    });
+
+    // NEW: Handle opponent completion notification
+    this.socket.on("opponent_completed", (data: { 
+      username: string; 
+      score: number; 
+      totalQuestions: number 
+    }) => {
+      console.log("⏳ Opponent completed quiz:", data);
+      window.dispatchEvent(new CustomEvent("opponentCompleted", { detail: data }));
+    });
   }
 
   // Create a new battle room
@@ -320,6 +342,20 @@ class BattleService {
       this.socket.emit("battle_countdown", { battleId, countdown });
     } else {
       console.error("❌ Socket not connected, cannot emit battle_countdown");
+    }
+  }
+
+  // NEW: Emit player quiz completion
+  emitPlayerCompletedQuiz(battleId: string, userId: string, username: string, score: number, totalQuestions: number) {
+    if (this.socket?.connected) {
+      console.log("🎯 Emitting player_completed_quiz:", { battleId, userId, username, score, totalQuestions });
+      this.socket.emit("player_completed_quiz", { 
+        battleId, 
+        userId, 
+        username, 
+        score, 
+        totalQuestions 
+      });
     }
   }
 
