@@ -48,8 +48,10 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
         name: username.trim(),
       }
 
-      // Connect to socket service
-      battleService.connect(user)
+      // Connect to socket service and wait for connection
+      console.log("🔌 Connecting to socket service...")
+      await battleService.connect(user)
+      console.log("✅ Socket connected, joining battle...")
 
       // First check if battle exists
       const existingBattle = await battleService.getBattle(roomId)

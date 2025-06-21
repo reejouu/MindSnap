@@ -38,9 +38,28 @@ class BattleService {
     this.socket = io("http://localhost:3001", {
       transports: ["websocket", "polling"],
       autoConnect: true,
+      timeout: 10000,
     });
 
     this.setupSocketListeners();
+    
+    // Wait for connection before proceeding
+    return new Promise<void>((resolve) => {
+      if (this.socket?.connected) {
+        console.log("✅ Socket already connected");
+        resolve();
+      } else {
+        this.socket?.on("connect", () => {
+          console.log("✅ Connected to battle server");
+          resolve();
+        });
+        
+        this.socket?.on("connect_error", (error) => {
+          console.error("❌ Socket connection error:", error);
+          resolve(); // Resolve anyway to not block the flow
+        });
+      }
+    });
   }
 
   // Setup socket event listeners

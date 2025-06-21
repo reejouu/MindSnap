@@ -55,8 +55,10 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
         name: username.trim(),
       }
 
-      // Connect to socket service
-      battleService.connect(user)
+      // Connect to socket service and wait for connection
+      console.log("🔌 Connecting to socket service...")
+      await battleService.connect(user)
+      console.log("✅ Socket connected, creating battle...")
 
       // Create battle in database
       const battle = await battleService.createBattle(topic, user)
