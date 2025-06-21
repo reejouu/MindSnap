@@ -569,7 +569,17 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
           {/* Manual trigger button for testing */}
           <div className="mt-3 pt-3 border-t border-gray-700/30 space-y-2">
             <Button
-              onClick={() => battleService.triggerBattleReady(roomId)}
+              onClick={() => {
+                const currentBattle = battleService.getCurrentBattle()
+                if (currentBattle && currentBattle.players.length === 2) {
+                  window.dispatchEvent(new CustomEvent("battleReady", { 
+                    detail: { 
+                      players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
+                      battleId: currentBattle._id
+                    }
+                  }))
+                }
+              }}
               className="w-full text-xs py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
             >
               🔧 Manual Trigger Battle Ready
@@ -601,29 +611,12 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
             <Button
               onClick={async () => {
                 console.log("🔧 Manual trigger: Checking and fixing socket connection")
-                const success = await battleService.checkAndFixSocketConnection(roomId)
+                const success = await battleService.ensureConnection()
                 console.log("🔧 Socket check result:", success)
               }}
               className="w-full text-xs py-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
             >
               🔧 Check & Fix Socket Connection
-            </Button>
-            
-            <Button
-              onClick={() => {
-                const currentUser = battleService.getCurrentUser()
-                if (currentUser) {
-                  console.log("🔧 Manual trigger: Emitting join_battle event")
-                  battleService.emitSocketEvent("join_battle", {
-                    battleId: roomId,
-                    username: currentUser.name,
-                    userId: currentUser.id
-                  })
-                }
-              }}
-              className="w-full text-xs py-1 bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
-            >
-              📡 Emit Join Battle Event
             </Button>
           </div>
         </div>
