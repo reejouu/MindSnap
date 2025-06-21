@@ -322,6 +322,46 @@ class BattleService {
     }
   }
 
+  // Manually check and fix socket connection
+  async checkAndFixSocketConnection(battleId: string): Promise<boolean> {
+    console.log("🔧 Checking socket connection...");
+    console.log("🔧 Socket connected:", this.socket?.connected);
+    console.log("🔧 Current user:", this.currentUser);
+    console.log("🔧 Current battle:", this.currentBattle);
+    
+    if (!this.socket?.connected) {
+      console.log("🔧 Socket not connected, attempting to reconnect...");
+      if (this.currentUser) {
+        await this.connect(this.currentUser);
+        if (this.socket?.connected) {
+          console.log("🔧 Socket reconnected successfully");
+          // Rejoin the room after reconnection
+          this.rejoinSocketRoom(battleId);
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    if (this.currentUser && battleId) {
+      console.log("🔧 Socket is connected, rejoining room...");
+      this.rejoinSocketRoom(battleId);
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Manually emit socket event for testing
+  emitSocketEvent(eventName: string, data: any) {
+    if (this.socket?.connected) {
+      console.log(`🔧 Manually emitting ${eventName}:`, data);
+      this.socket.emit(eventName, data);
+    } else {
+      console.log(`❌ Cannot emit ${eventName} - socket not connected`);
+    }
+  }
+
   // Check if socket is connected
   isConnected(): boolean {
     return this.socket?.connected || false;

@@ -45,6 +45,7 @@ io.on("connection", (socket) => {
     // Always emit updated player list to ALL players in the room (including the joiner)
     console.log(`📊 Emitting battle_players_updated to all players in ${battleId}:`, battlePlayers.map(p => p.username));
     console.log(`📊 Room ${battleId} has ${socket.adapter.rooms.get(battleId)?.size || 0} sockets`);
+    console.log(`📊 Sockets in room:`, Array.from(socket.adapter.rooms.get(battleId) || []));
     
     io.to(battleId).emit("battle_players_updated", {
       players: battlePlayers,
@@ -56,6 +57,7 @@ io.on("connection", (socket) => {
     // If this is not the first player, notify other players about the new joiner
     if (battlePlayers.length > 1) {
       console.log(`🎉 Emitting opponent_joined for ${username} to other players in ${battleId}`);
+      console.log(`🎉 Other players in room:`, battlePlayers.filter(p => p.userId !== userId).map(p => p.username));
       socket.to(battleId).emit("opponent_joined", { username, userId });
     }
     
