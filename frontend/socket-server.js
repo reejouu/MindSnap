@@ -90,10 +90,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("battle_start", (data) => {
-    const { battleId } = data;
-    console.log(`⚔️ Battle ${battleId} starting for all players`);
-    io.to(battleId).emit("battle_started", { battleId });
+  socket.on("start_battle", (data) => {
+    const { battleId, quiz } = data;
+    console.log(`⚔️ Battle ${battleId} starting for all players with quiz:`, quiz);
+    io.to(battleId).emit("battle_started", { battleId, quiz });
   });
 
   socket.on("battle_countdown", (data) => {

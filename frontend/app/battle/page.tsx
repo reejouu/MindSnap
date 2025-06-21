@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Swords, Trophy, Users, Zap, Target, Crown, ArrowLeft } from "lucide-react"
 import { battleService, User } from "@/lib/battleService"
+import { BattleQuiz } from "../../components/battle/BattleQuiz"
 
 type BattleState =
   | "topic-selection"
@@ -23,6 +24,7 @@ type BattleState =
   | "waiting"
   | "match-found"
   | "vs-intro"
+  | "battle-quiz"
 
 interface Player {
   id: string
@@ -37,6 +39,7 @@ export default function BattleRoyalePage() {
   const [battleState, setBattleState] = useState<BattleState>("topic-selection")
   const [selectedTopic, setSelectedTopic] = useState<string>("")
   const [roomId, setRoomId] = useState<string>("")
+  const [quiz, setQuiz] = useState<any | null>(null)
   const [currentPlayer] = useState<Player>({
     id: "player1",
     name: "You",
@@ -69,7 +72,7 @@ export default function BattleRoyalePage() {
       // Find the opponent from the players list
       const currentUser = battleService.getCurrentUser()
       console.log("🔍 Current user in main page:", currentUser)
-      const foundOpponent = players.find(p => p.userId !== currentUser?.id)
+      const foundOpponent = players.find((p: { userId: string; username: string }) => p.userId !== currentUser?.id)
       
       console.log(`🎯 Found opponent: ${foundOpponent ? foundOpponent.username : 'none'}, current opponent state: ${opponent ? opponent.name : 'none'}`)
       
@@ -110,6 +113,11 @@ export default function BattleRoyalePage() {
   const handleTopicSelect = (topic: string) => {
     setSelectedTopic(topic)
     setBattleState("mode-selection")
+  }
+
+  const handleBattleStart = (generatedQuiz: any) => {
+    setQuiz(generatedQuiz)
+    setBattleState("battle-quiz")
   }
 
   const handleCreateRoom = (generatedRoomId: string) => {
@@ -256,14 +264,14 @@ export default function BattleRoyalePage() {
           {battleState === "waiting" && (
             <motion.div
               key="waiting"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
             >
-              <MatchWaiting 
-                roomId={roomId} 
-                topic={selectedTopic} 
+              <MatchWaiting
+                roomId={roomId}
+                topic={selectedTopic}
                 player={currentPlayer}
                 onOpponentJoined={handleOpponentJoined}
               />
@@ -282,15 +290,33 @@ export default function BattleRoyalePage() {
             </motion.div>
           )}
 
-          {battleState === "vs-intro" && (
+          {battleState === "vs-intro" && opponent && (
             <motion.div
               key="vs-intro"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <VSIntro
+                player1={currentPlayer}
+                player2={opponent}
+                topic={selectedTopic}
+                roomId={roomId}
+                onBattleStart={handleBattleStart}
+              />
+            </motion.div>
+          )}
+
+          {battleState === "battle-quiz" && quiz && (
+            <motion.div
+              key="battle-quiz"
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
             >
-              <VSIntro player1={currentPlayer} player2={opponent!} topic={selectedTopic} roomId={roomId} />
+              <BattleQuiz quiz={quiz} onQuizComplete={(score, total) => console.log(`Quiz complete! Score: ${score}/${total}`)} />
             </motion.div>
           )}
         </AnimatePresence>

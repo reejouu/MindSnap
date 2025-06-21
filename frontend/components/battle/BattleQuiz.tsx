@@ -18,17 +18,13 @@ import {
 } from "lucide-react"
 import { 
   battleQuizService, 
-  type BattleQuiz, 
+  type BattleQuiz as BattleQuizType, 
   BattleQuizQuestion,
-  BattleQuizRequest 
 } from "@/lib/battleQuizService"
 
 interface BattleQuizProps {
-  topic: string
-  difficulty?: "easy" | "intermediate" | "hard"
-  numQuestions?: number
+  quiz: BattleQuizType
   onQuizComplete?: (score: number, totalQuestions: number) => void
-  onQuizError?: (error: string) => void
 }
 
 interface AnswerState {
@@ -40,43 +36,19 @@ interface AnswerState {
 }
 
 export function BattleQuiz({ 
-  topic, 
-  difficulty = "intermediate", 
-  numQuestions = 5,
-  onQuizComplete,
-  onQuizError 
+  quiz,
+  onQuizComplete 
 }: BattleQuizProps) {
-  const [quiz, setQuiz] = useState<BattleQuiz | null>(null)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<AnswerState>({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string>("")
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [startTime, setStartTime] = useState<number | null>(null)
 
-  // Generate quiz on component mount
   useEffect(() => {
-    generateQuiz()
-  }, [topic, difficulty, numQuestions])
-
-  const generateQuiz = async () => {
-    try {
-      setIsLoading(true)
-      setError("")
-      
-      const request: BattleQuizRequest = {
-        topic,
-        difficulty,
-        num_questions: numQuestions
-      }
-      
-      const generatedQuiz = await battleQuizService.generateBattleQuiz(request)
-      setQuiz(generatedQuiz)
+    if (quiz) {
       setStartTime(Date.now())
-      
-      // Initialize answer state
       const initialAnswers: AnswerState = {}
-      generatedQuiz.quiz.forEach(question => {
+      quiz.quiz.forEach(question => {
         initialAnswers[question.id] = {
           selectedAnswer: null,
           isCorrect: null,
@@ -84,15 +56,8 @@ export function BattleQuiz({
         }
       })
       setAnswers(initialAnswers)
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to generate quiz"
-      setError(errorMessage)
-      onQuizError?.(errorMessage)
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [quiz])
 
   const handleAnswerSelect = (questionId: number, answerIndex: number) => {
     if (quizCompleted) return
@@ -100,7 +65,7 @@ export function BattleQuiz({
     const question = quiz?.quiz[currentQuestionIndex]
     if (!question || question.id !== questionId) return
     
-    const isCorrect = battleQuizService.isCorrectAnswer(questionId, answerIndex)
+    const isCorrect = question.correct_answer === answerIndex
     const timeSpent = startTime ? Date.now() - startTime : 0
     
     setAnswers(prev => ({
@@ -145,7 +110,7 @@ export function BattleQuiz({
     return Object.values(answers).filter(a => a.isCorrect).length
   }
 
-  if (isLoading) {
+  if (!quiz) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -158,31 +123,10 @@ export function BattleQuiz({
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"
           />
-          <p className="text-gray-400">Generating battle quiz for {topic}...</p>
+          <p className="text-gray-400">Waiting for quiz data...</p>
         </div>
       </motion.div>
     )
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center space-y-4"
-      >
-        <XCircle className="w-16 h-16 text-red-500 mx-auto" />
-        <h3 className="text-xl font-semibold text-white">Failed to Generate Quiz</h3>
-        <p className="text-gray-400">{error}</p>
-        <Button onClick={generateQuiz} className="bg-blue-500 hover:bg-blue-600">
-          Try Again
-        </Button>
-      </motion.div>
-    )
-  }
-
-  if (!quiz) {
-    return null
   }
 
   const currentQuestion = getCurrentQuestion()
@@ -240,80 +184,73 @@ export function BattleQuiz({
         transition={{ duration: 0.3 }}
       >
         <Card className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">
-              {currentQuestion.question}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Answer Options */}
-            <div className="grid gap-3">
-              {currentQuestion.options.map((option, index) => {
-                const isSelected = currentAnswer?.selectedAnswer === index
-                const isCorrect = currentAnswer?.isCorrect && isSelected
-                const isWrong = currentAnswer?.isCorrect === false && isSelected
-                
-                return (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button
-                      variant="outline"
-                      className={`w-full justify-start p-4 h-auto text-left ${
-                        isSelected
-                          ? isCorrect
-                            ? "bg-green-500/20 border-green-500/50 text-green-400"
-                            : isWrong
-                            ? "bg-red-500/20 border-red-500/50 text-red-400"
-                            : "bg-blue-500/20 border-blue-500/50 text-blue-400"
-                          : "bg-gray-800/50 border-gray-600/50 text-gray-300 hover:bg-gray-700/50"
-                      }`}
-                      onClick={() => handleAnswerSelect(currentQuestion.id, index)}
-                      disabled={hasAnswered}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          isSelected
-                            ? isCorrect
-                              ? "border-green-400 bg-green-400/20"
-                              : isWrong
-                              ? "border-red-400 bg-red-400/20"
-                              : "border-blue-400 bg-blue-400/20"
-                            : "border-gray-500"
-                        }`}>
-                          {isSelected && (
-                            isCorrect ? (
-                              <CheckCircle className="w-4 h-4 text-green-400" />
-                            ) : isWrong ? (
-                              <XCircle className="w-4 h-4 text-red-400" />
-                            ) : (
-                              <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                            )
-                          )}
-                        </div>
-                        <span className="font-medium">{String.fromCharCode(65 + index)}.</span>
-                        <span>{option}</span>
-                      </div>
-                    </Button>
-                  </motion.div>
-                )
-              })}
-            </div>
+          <CardContent className="p-8">
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-6 break-words leading-tight tracking-tight">
+                  {currentQuestion.question}
+                </h2>
+              </div>
 
-            {/* Explanation */}
-            {hasAnswered && currentQuestion.explanation && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-gray-800/30 rounded-lg border border-gray-700/30"
-              >
-                <p className="text-sm text-gray-300">
-                  <strong>Explanation:</strong> {currentQuestion.explanation}
-                </p>
-              </motion.div>
-            )}
+              <div className="space-y-3">
+                {currentQuestion.options.map((option, index) => {
+                  const isSelected = currentAnswer?.selectedAnswer === index
+                  const isCorrect = currentAnswer?.isCorrect && isSelected
+                  const isWrong = currentAnswer?.isCorrect === false && isSelected
+                  const isTheCorrectAnswer = hasAnswered && index === currentQuestion.correct_answer
+
+                  let buttonClass = "w-full p-4 text-left border rounded-lg transition-all duration-200 text-base font-medium break-words "
+
+                  if (hasAnswered) {
+                    if (isTheCorrectAnswer) {
+                      buttonClass += "border-green-500 bg-green-500/10 text-green-400 shadow-lg shadow-green-500/20"
+                    } else if (isWrong) {
+                      buttonClass += "border-red-500 bg-red-500/10 text-red-400 shadow-lg shadow-red-500/20"
+                    } else {
+                      buttonClass += "border-gray-600/50 text-gray-400 bg-gray-800/30"
+                    }
+                  } else {
+                    if (isSelected) {
+                      buttonClass += "border-blue-500 bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/20"
+                    } else {
+                      buttonClass += "border-gray-600/50 text-gray-200 hover:border-blue-500/40 hover:bg-blue-500/5 bg-gray-800/30 hover:shadow-lg"
+                    }
+                  }
+
+                  return (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: hasAnswered ? 1 : 1.02 }}
+                      whileTap={{ scale: hasAnswered ? 1 : 0.98 }}
+                    >
+                      <button
+                        onClick={() => handleAnswerSelect(currentQuestion.id, index)}
+                        disabled={hasAnswered}
+                        className={buttonClass}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{String.fromCharCode(65 + index)}. {option}</span>
+                          {hasAnswered && isTheCorrectAnswer && <CheckCircle className="w-5 h-5 text-green-400" />}
+                          {hasAnswered && isWrong && <XCircle className="w-5 h-5 text-red-400" />}
+                        </div>
+                      </button>
+                    </motion.div>
+                  )
+                })}
+              </div>
+
+              {hasAnswered && currentQuestion.explanation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center p-4 bg-gray-800/30 rounded-lg border border-gray-700/30 mt-4"
+                >
+                  <p className="text-sm text-gray-300">
+                    <strong className="font-semibold text-green-400">Explanation:</strong> {currentQuestion.explanation}
+                  </p>
+                </motion.div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </motion.div>

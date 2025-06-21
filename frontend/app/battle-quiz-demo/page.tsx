@@ -15,14 +15,35 @@ export default function BattleQuizDemoPage() {
   const [topic, setTopic] = useState("JavaScript Fundamentals")
   const [difficulty, setDifficulty] = useState<"easy" | "intermediate" | "hard">("intermediate")
   const [numQuestions, setNumQuestions] = useState(5)
+  const [quizData, setQuizData] = useState<any | null>(null)
+  const [loadingQuiz, setLoadingQuiz] = useState(false)
   const [showQuiz, setShowQuiz] = useState(false)
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [finalScore, setFinalScore] = useState<{ score: number; total: number } | null>(null)
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = async () => {
+    setLoadingQuiz(true)
     setShowQuiz(true)
     setQuizCompleted(false)
     setFinalScore(null)
+    try {
+      const response = await fetch("/api/generate-battle-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, difficulty, num_questions: numQuestions }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || "Failed to generate quiz")
+      }
+      const data = await response.json()
+      setQuizData(data)
+    } catch (e: any) {
+      handleQuizError(e.message)
+      setShowQuiz(false)
+    } finally {
+      setLoadingQuiz(false)
+    }
   }
 
   const handleQuizComplete = (score: number, totalQuestions: number) => {
@@ -39,6 +60,7 @@ export default function BattleQuizDemoPage() {
     setShowQuiz(false)
     setQuizCompleted(false)
     setFinalScore(null)
+    setQuizData(null)
   }
 
   const getScorePercentage = () => {
@@ -67,13 +89,17 @@ export default function BattleQuizDemoPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
         <div className="max-w-6xl mx-auto">
-          <BattleQuiz
-            topic={topic}
-            difficulty={difficulty}
-            numQuestions={numQuestions}
-            onQuizComplete={handleQuizComplete}
-            onQuizError={handleQuizError}
-          />
+          {loadingQuiz ? (
+            <div className="flex items-center justify-center min-h-[400px] text-white">
+              <p>Generating Quiz...</p>
+            </div>
+          ) : quizData ? (
+            <BattleQuiz quiz={quizData} onQuizComplete={handleQuizComplete} />
+          ) : (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <p className="text-red-400">Failed to load quiz. Please try again.</p>
+            </div>
+          )}
         </div>
       </div>
     )

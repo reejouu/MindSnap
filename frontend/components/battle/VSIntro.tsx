@@ -22,9 +22,10 @@ interface VSIntroProps {
   player2: Player
   topic: string
   roomId: string
+  onBattleStart: (quiz: any) => void
 }
 
-export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
+export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIntroProps) {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [battleStarted, setBattleStarted] = useState(false)
   const [isRoomCreator, setIsRoomCreator] = useState(false)
@@ -138,9 +139,13 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
 
     const handleBattleStarted = (event: CustomEvent) => {
       console.log("⚔️ VSIntro - Battle started event received:", event.detail)
+      const { quiz } = event.detail
       setBattleStarted(true)
       setCountdown(null)
       setWaitingForCreator(false)
+      if (quiz) {
+        onBattleStart(quiz)
+      }
     }
 
     const handleBattlePlayersUpdated = (event: CustomEvent) => {
@@ -171,7 +176,7 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
       window.removeEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
       window.removeEventListener("battleReady", handleBattleReady as EventListener)
     }
-  }, [])
+  }, [onBattleStart])
 
   const handleStartBattle = async () => {
     console.log("🚀 Room creator starting battle")
@@ -215,15 +220,33 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
           if (prev && prev > 1) {
             const newCountdown = prev - 1
             console.log(`⏰ Countdown: ${newCountdown}`)
-            // Emit countdown update to all players
             battleService.emitBattleCountdown(roomId, newCountdown)
             return newCountdown
           } else {
             clearInterval(countdownTimer)
-            console.log("⚔️ Countdown finished, starting battle...")
-            // Emit battle started event
-            battleService.emitBattleStart(roomId)
-            setBattleStarted(true)
+            console.log("⚔️ Countdown finished, generating quiz...")
+            
+            // Generate quiz
+            fetch("/api/generate-battle-quiz", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ topic }),
+            })
+            .then(res => {
+              if (!res.ok) throw new Error("Failed to generate quiz")
+              return res.json()
+            })
+            .then(quiz => {
+              console.log("✅ Quiz generated, starting battle...")
+              battleService.emitBattleStart(roomId, quiz)
+              setBattleStarted(true)
+              onBattleStart(quiz)
+            })
+            .catch(error => {
+              console.error("❌ Error generating quiz:", error)
+              setError("Failed to generate quiz. Please try again.")
+            })
+            
             return null
           }
         })

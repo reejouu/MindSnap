@@ -94,7 +94,7 @@ class BattleService {
       window.dispatchEvent(new CustomEvent("battleReady", { detail: data }));
     });
 
-    this.socket.on("battle_started", (data: { battleId: string }) => {
+    this.socket.on("battle_started", (data: { battleId: string, quiz: any }) => {
       console.log("⚔️ Battle started:", data.battleId);
       window.dispatchEvent(new CustomEvent("battleStarted", { detail: data }));
     });
@@ -296,17 +296,14 @@ class BattleService {
     }
   }
 
-  // Emit battle start event to synchronize all players
-  emitBattleStart(battleId: string) {
+  // Emit battle start event
+  emitBattleStart(battleId: string, quiz: any) {
     if (this.socket) {
-      console.log("🚀 Emitting battle_start for battle:", battleId);
-      this.socket.emit("battle_start", { battleId });
-    } else {
-      console.error("❌ Socket not connected, cannot emit battle_start");
+      this.socket.emit("start_battle", { battleId, quiz });
     }
   }
 
-  // Emit countdown update to synchronize both players
+  // Emit battle countdown event
   emitBattleCountdown(battleId: string, countdown: number) {
     if (this.socket) {
       console.log("⏰ Emitting battle_countdown for battle:", battleId, "countdown:", countdown);
