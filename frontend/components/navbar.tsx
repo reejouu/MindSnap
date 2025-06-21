@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarProps> = ({
     { tab: "Features", path: "#features" },
     { tab: "Dashboard", path: "/dashboard" },
     { tab: "Leaderboard", path: "/leaderboard" },
-    { tab: "QuizBattle", path: "/quizbattle" },
+    { tab: "QuizBattle", path: "/battle" },
     { tab: "About us", path: "#about-us" }
   ];
 
