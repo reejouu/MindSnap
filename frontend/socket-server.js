@@ -15,13 +15,22 @@ const activeBattles = new Map();
 io.on("connection", (socket) => {
   console.log("🧠 Client connected: " + socket.id);
 
+  // Track which rooms this socket is in
   socket.on("join_battle", async (data) => {
     const { battleId, username, userId } = data;
     console.log(`🔗 User ${username} (${userId}) attempting to join battle ${battleId}`);
     console.log(`🔗 Socket ID: ${socket.id}, Socket connected: ${socket.connected}`);
     
+    // Check if socket is already in this room
+    const rooms = Array.from(socket.rooms);
+    console.log(`🔗 Socket ${socket.id} current rooms:`, rooms);
+    
     socket.join(battleId);
     console.log(`🔗 Socket ${socket.id} joined room ${battleId}`);
+    
+    // Verify room join
+    const updatedRooms = Array.from(socket.rooms);
+    console.log(`🔗 Socket ${socket.id} rooms after join:`, updatedRooms);
     
     // Store player info
     if (!activeBattles.has(battleId)) {
@@ -47,6 +56,7 @@ io.on("connection", (socket) => {
     console.log(`📊 Room ${battleId} has ${socket.adapter.rooms.get(battleId)?.size || 0} sockets`);
     console.log(`📊 Sockets in room:`, Array.from(socket.adapter.rooms.get(battleId) || []));
     
+    // Use io.to() to ensure all players in the room receive the event
     io.to(battleId).emit("battle_players_updated", {
       players: battlePlayers,
       playerCount: battlePlayers.length
@@ -58,13 +68,44 @@ io.on("connection", (socket) => {
     if (battlePlayers.length > 1) {
       console.log(`🎉 Emitting opponent_joined for ${username} to other players in ${battleId}`);
       console.log(`🎉 Other players in room:`, battlePlayers.filter(p => p.userId !== userId).map(p => p.username));
+      
+      // Use socket.to() to emit to all players except the sender
       socket.to(battleId).emit("opponent_joined", { username, userId });
+      
+      // Also emit to the sender to ensure they know the event was sent
+      console.log(`🎉 Emitting opponent_joined confirmation to ${username}`);
+      socket.emit("opponent_joined", { username, userId });
     }
     
     // If we have exactly 2 players, trigger battle start for all players
     if (battlePlayers.length === 2) {
       console.log(`🚀 Battle ${battleId} is ready to start with 2 players!`);
       console.log(`🚀 Emitting battle_ready to ALL players in ${battleId}:`, battlePlayers.map(p => p.username));
+      
+      // Use io.to() to ensure all players receive the battle ready event
+      io.to(battleId).emit("battle_ready", {
+        players: battlePlayers,
+        battleId: battleId
+      });
+    }
+  });
+
+  socket.on("ensure_players_connected", (data) => {
+    const { battleId, players } = data;
+    console.log(`🔧 Ensuring all players are connected to battle ${battleId}:`, players.map(p => p.username));
+    
+    // Force emit battle_players_updated to all players in the room
+    const battlePlayers = activeBattles.get(battleId) || [];
+    console.log(`🔧 Current battle players:`, battlePlayers.map(p => p.username));
+    
+    if (battlePlayers.length === 2) {
+      console.log(`🔧 Emitting battle_players_updated to ensure synchronization`);
+      io.to(battleId).emit("battle_players_updated", {
+        players: battlePlayers,
+        playerCount: battlePlayers.length
+      });
+      
+      console.log(`🔧 Emitting battle_ready to ensure all players are ready`);
       io.to(battleId).emit("battle_ready", {
         players: battlePlayers,
         battleId: battleId

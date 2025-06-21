@@ -141,7 +141,7 @@ class BattleService {
         await this.ensureConnection();
       }
 
-      // Join socket room
+      // Join socket room with retry mechanism
       if (this.socket?.connected) {
         console.log("🔗 Emitting join_battle for creator:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
@@ -149,6 +149,16 @@ class BattleService {
           username: user.name,
           userId: user.id 
         });
+        
+        // Verify room join by checking socket rooms after a short delay
+        setTimeout(() => {
+          console.log("🔍 Verifying room join for creator...");
+          this.socket?.emit("join_battle", { 
+            battleId: battle._id, 
+            username: user.name,
+            userId: user.id 
+          });
+        }, 1000);
       } else {
         console.log("❌ Socket not connected for battle creation");
       }
@@ -187,7 +197,7 @@ class BattleService {
         await this.ensureConnection();
       }
 
-      // Join socket room
+      // Join socket room with retry mechanism
       if (this.socket?.connected) {
         console.log("🔗 Emitting join_battle for joiner:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
@@ -195,6 +205,16 @@ class BattleService {
           username: user.name,
           userId: user.id 
         });
+        
+        // Verify room join by checking socket rooms after a short delay
+        setTimeout(() => {
+          console.log("🔍 Verifying room join for joiner...");
+          this.socket?.emit("join_battle", { 
+            battleId: battle._id, 
+            username: user.name,
+            userId: user.id 
+          });
+        }, 1000);
       } else {
         console.log("❌ Socket not connected for battle joining");
       }
@@ -360,6 +380,84 @@ class BattleService {
     } else {
       console.log(`❌ Cannot emit ${eventName} - socket not connected`);
     }
+  }
+
+  // Manually trigger all socket events for a battle (for testing)
+  async triggerAllSocketEvents(battleId: string) {
+    console.log("🔧 Manually triggering all socket events for battle:", battleId);
+    
+    if (!this.socket?.connected) {
+      console.log("❌ Socket not connected, cannot trigger events");
+      return false;
+    }
+    
+    if (!this.currentUser) {
+      console.log("❌ No current user, cannot trigger events");
+      return false;
+    }
+    
+    // Rejoin the room
+    this.rejoinSocketRoom(battleId);
+    
+    // Get current battle data
+    const battle = await this.getBattle(battleId);
+    if (battle && battle.players.length === 2) {
+      console.log("🔧 Battle has 2 players, triggering battle ready event");
+      
+      // Trigger battle ready event
+      window.dispatchEvent(new CustomEvent("battleReady", { 
+        detail: { 
+          players: battle.players.map(p => ({ userId: p.userId, username: p.username })),
+          battleId: battle._id
+        }
+      }))
+      
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Ensure all players in a battle are connected to socket room
+  async ensureAllPlayersConnected(battleId: string): Promise<boolean> {
+    console.log("🔧 Ensuring all players are connected to socket room:", battleId);
+    
+    if (!this.socket?.connected) {
+      console.log("❌ Socket not connected, attempting to reconnect...");
+      await this.ensureConnection();
+    }
+    
+    if (!this.socket?.connected || !this.currentUser) {
+      console.log("❌ Cannot ensure players connected - socket not connected or no current user");
+      return false;
+    }
+    
+    // Get current battle data
+    const battle = await this.getBattle(battleId);
+    if (!battle) {
+      console.log("❌ Battle not found");
+      return false;
+    }
+    
+    console.log("🔧 Battle players:", battle.players.map(p => p.username));
+    
+    // Ensure current user is in the socket room
+    this.rejoinSocketRoom(battleId);
+    
+    // If we have 2 players, trigger events for all players
+    if (battle.players.length === 2) {
+      console.log("🔧 Battle has 2 players, ensuring all are connected...");
+      
+      // Emit a special event to ensure all players are in the room
+      this.socket.emit("ensure_players_connected", { 
+        battleId,
+        players: battle.players.map(p => ({ userId: p.userId, username: p.username }))
+      });
+      
+      return true;
+    }
+    
+    return false;
   }
 
   // Check if socket is connected
