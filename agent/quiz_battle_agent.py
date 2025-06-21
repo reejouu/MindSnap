@@ -28,6 +28,7 @@ Requirements:
 - Avoid overly simple or extremely difficult questions for {difficulty} level
 - Make questions engaging and suitable for competitive play
 - Vary the question types (factual, conceptual, analytical)
+- IMPORTANT: Do NOT include letter prefixes (A, B, C, D) in the option text - just provide the option content
 
 Return your output in the following JSON format:
 {{
@@ -36,10 +37,10 @@ Return your output in the following JSON format:
       "id": 1,
       "question": "What is the main concept of [topic]?",
       "options": [
-        "Option A description",
-        "Option B description", 
-        "Option C description",
-        "Option D description"
+        "The primary principle that governs the system",
+        "A secondary consideration in the process", 
+        "An optional feature that can be ignored",
+        "A completely unrelated concept"
       ],
       "correct_answer": 0,
       "explanation": "Brief explanation of why this is correct"

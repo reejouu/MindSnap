@@ -112,6 +112,11 @@ class BattleService {
     this.socket.on("battle_ended", (data: { winner: string }) => {
       window.dispatchEvent(new CustomEvent("battleEnded", { detail: data }));
     });
+
+    this.socket.on("quiz_completed", (data: { userId: string; username: string; score: number; totalQuestions: number; timeSpent: number; accuracy: number }) => {
+      console.log("🎯 Quiz completed event received:", data);
+      window.dispatchEvent(new CustomEvent("playerCompleted", { detail: data }));
+    });
   }
 
   // Create a new battle room
@@ -279,20 +284,17 @@ class BattleService {
 
   // Emit question answered event
   emitQuestionAnswered(battleId: string, questionId: string, isCorrect: boolean) {
-    if (this.socket && this.currentUser) {
-      this.socket.emit("question_answered", {
-        battleId,
-        user: this.currentUser.id,
-        questionId,
-        isCorrect,
-      });
+    if (this.socket?.connected) {
+      console.log("🎯 Emitting question answered:", { battleId, questionId, isCorrect });
+      this.socket.emit("question_answered", { battleId, questionId, isCorrect });
     }
   }
 
   // Emit battle end event
   emitBattleEnd(battleId: string, winner: string) {
-    if (this.socket) {
-      this.socket.emit("end_battle", { battleId, winner });
+    if (this.socket?.connected) {
+      console.log("🏆 Emitting battle end:", { battleId, winner });
+      this.socket.emit("battle_end", { battleId, winner });
     }
   }
 

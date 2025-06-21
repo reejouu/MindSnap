@@ -32,6 +32,21 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
   const [waitingForCreator, setWaitingForCreator] = useState(false)
   const [error, setError] = useState<string>("")
   const battleReadyTriggeredRef = useRef(false)
+  const battleStartedTriggeredRef = useRef(false)
+  const componentActiveRef = useRef(true)
+
+  // Cleanup effect to reset refs when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log("🧹 VSIntro - Component unmounting, cleaning up...")
+      componentActiveRef.current = false
+      battleReadyTriggeredRef.current = false
+      battleStartedTriggeredRef.current = false
+      // Clear any ongoing countdown
+      setCountdown(null)
+      setBattleStarted(false)
+    }
+  }, [])
 
   // Check if current user is the room creator (first player)
   useEffect(() => {
@@ -114,19 +129,19 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
       }
     }
 
-    // Only refresh if we haven't triggered battle ready yet
-    if (!battleReadyTriggeredRef.current) {
+    // Only refresh if we haven't triggered battle ready yet and component is active
+    if (!battleReadyTriggeredRef.current && !battleStarted) {
       // Refresh immediately and then every 5 seconds (reduced frequency)
       refreshBattleData()
       const interval = setInterval(() => {
-        if (!battleReadyTriggeredRef.current) {
+        if (!battleReadyTriggeredRef.current && !battleStarted) {
           refreshBattleData()
         }
       }, 5000)
 
       return () => clearInterval(interval)
     }
-  }, [roomId, battleReadyTriggeredRef])
+  }, [roomId, battleReadyTriggeredRef, battleStarted])
 
   // Listen for countdown events from socket
   useEffect(() => {
@@ -135,21 +150,6 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
       const { countdown } = event.detail
       setCountdown(countdown)
       setWaitingForCreator(false)
-    }
-
-    const handleBattleStarted = (event: CustomEvent) => {
-      console.log("⚔️ VSIntro - Battle started event received:", event.detail)
-      const { quiz } = event.detail
-      console.log("⚔️ VSIntro - Quiz data received:", quiz ? "YES" : "NO")
-      setBattleStarted(true)
-      setCountdown(null)
-      setWaitingForCreator(false)
-      if (quiz) {
-        console.log("⚔️ VSIntro - Calling onBattleStart with quiz data")
-        onBattleStart(quiz)
-      } else {
-        console.error("❌ VSIntro - No quiz data in battle started event")
-      }
     }
 
     const handleBattlePlayersUpdated = (event: CustomEvent) => {
@@ -169,25 +169,28 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
       battleReadyTriggeredRef.current = true
     }
 
-    window.addEventListener("battleCountdown", handleBattleCountdown as EventListener)
-    window.addEventListener("battleStarted", handleBattleStarted as EventListener)
-    window.addEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
-    window.addEventListener("battleReady", handleBattleReady as EventListener)
+    // Only add event listeners if component is still mounted and battle hasn't started
+    if (!battleStartedTriggeredRef.current && !battleStarted) {
+      console.log("🎧 VSIntro - Adding event listeners")
+      window.addEventListener("battleCountdown", handleBattleCountdown as EventListener)
+      window.addEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
+      window.addEventListener("battleReady", handleBattleReady as EventListener)
+    }
 
     return () => {
+      console.log("🧹 VSIntro - Removing event listeners")
       window.removeEventListener("battleCountdown", handleBattleCountdown as EventListener)
-      window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
       window.removeEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
       window.removeEventListener("battleReady", handleBattleReady as EventListener)
     }
-  }, [onBattleStart])
+  }, [battleStartedTriggeredRef.current, battleStarted])
 
   const handleStartBattle = async () => {
     console.log("🚀 Room creator starting battle")
     setError("") // Clear any previous errors
 
     // Prevent multiple countdowns from being started
-    if (countdown !== null || battleStarted) {
+    if (countdown !== null || battleStarted || battleStartedTriggeredRef.current) {
       console.warn("Countdown or battle already started, ignoring duplicate start.")
       return
     }
@@ -229,7 +232,7 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
 
       const countdownTimer = setInterval(() => {
         setCountdown((prev) => {
-          if (!countdownRunning) return prev
+          if (!countdownRunning || battleStartedTriggeredRef.current) return prev
           if (prev && prev > 1) {
             const newCountdown = prev - 1
             console.log(`⏰ Countdown: ${newCountdown}`)
@@ -252,8 +255,11 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
               })
               .then(quiz => {
                 console.log("✅ Quiz generated, starting battle...")
+                // Emit battle start event for other players
                 battleService.emitBattleStart(roomId, quiz)
+                // Directly call onBattleStart instead of relying on event
                 setBattleStarted(true)
+                onBattleStart(quiz)
               })
               .catch(error => {
                 console.error("❌ Error generating quiz:", error)
@@ -292,7 +298,8 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
     }
   }
 
-  if (battleStarted) {
+  // Early return if battle has started to prevent further re-renders
+  if (battleStarted || battleStartedTriggeredRef.current) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -312,7 +319,7 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
 
         <div>
           <h2 className="text-4xl font-bold text-white mb-2">Battle Started!</h2>
-          <p className="text-gray-400">Good luck to both players! ��</p>
+          <p className="text-gray-400">Good luck to both players! ⚔️</p>
         </div>
 
         <motion.div
@@ -590,82 +597,6 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
           </motion.div>
         )}
       </motion.div>
-
-      {/* Debug Info - Only show in development */}
-      {process.env.NODE_ENV === "development" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="text-center text-sm text-gray-500"
-        >
-          <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-            <p className="text-xs text-gray-400 mb-2">Debug Info:</p>
-            <div className="text-xs space-y-1">
-              <p>Room Creator: {isRoomCreator ? 'Yes' : 'No'}</p>
-              <p>Waiting for Creator: {waitingForCreator ? 'Yes' : 'No'}</p>
-              <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
-              <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
-              <p>Socket Connected: {battleService.isConnected() ? 'Yes' : 'No'}</p>
-              <p>Battle Ready Triggered: {battleReadyTriggeredRef.current ? 'Yes' : 'No'}</p>
-            </div>
-            
-            {/* Manual trigger button for testing */}
-            <div className="mt-3 pt-3 border-t border-gray-700/30 space-y-2">
-              <Button
-                onClick={() => {
-                  const currentBattle = battleService.getCurrentBattle()
-                  if (currentBattle && currentBattle.players.length === 2) {
-                    window.dispatchEvent(new CustomEvent("battleReady", { 
-                      detail: { 
-                        players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
-                        battleId: currentBattle._id
-                      }
-                    }))
-                  }
-                }}
-                className="w-full text-xs py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
-              >
-                🔧 Manual Trigger Battle Ready
-              </Button>
-              <Button
-                onClick={handleForceRefresh}
-                className="w-full text-xs py-1 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-              >
-                🔄 Force Refresh Battle Data
-              </Button>
-              <Button
-                onClick={() => {
-                  const currentBattle = battleService.getCurrentBattle()
-                  if (currentBattle && currentBattle.players.length === 2) {
-                    console.log("🔧 Manual trigger: Dispatching battle ready event")
-                    window.dispatchEvent(new CustomEvent("battleReady", { 
-                      detail: { 
-                        players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
-                        battleId: currentBattle._id
-                      }
-                    }))
-                  }
-                }}
-                className="w-full text-xs py-1 bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30"
-              >
-                🚀 Manual Trigger Battle Ready Event
-              </Button>
-              
-              <Button
-                onClick={async () => {
-                  console.log("🔧 Manual trigger: Checking and fixing socket connection")
-                  const success = await battleService.ensureConnection()
-                  console.log("🔧 Socket check result:", success)
-                }}
-                className="w-full text-xs py-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
-              >
-                🔧 Check & Fix Socket Connection
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </div>
   )
 }

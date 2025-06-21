@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 // Update the import path if the file is located elsewhere, for example:
 import { TopicSelector } from "../../components/battle/TopicSelector"
@@ -9,6 +9,7 @@ import { CreateRoom } from "../../components/battle/CreateRoom"
 import { JoinRoom } from "../../components/battle/JoinRoom"
 import { MatchWaiting } from "../../components/battle/MatchWaiting"
 import { VSIntro } from "../../components/battle/VSIntro"
+import { QuizTopicInput } from "../../components/battle/QuizTopicInput"
 import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,8 +18,8 @@ import { battleService, User } from "@/lib/battleService"
 import { BattleQuiz } from "../../components/battle/BattleQuiz"
 
 type BattleState =
-  | "topic-selection"
   | "mode-selection"
+  | "quiz-topic-input"
   | "create-room"
   | "join-room"
   | "waiting"
@@ -36,10 +37,12 @@ interface Player {
 
 export default function BattleRoyalePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [battleState, setBattleState] = useState<BattleState>("topic-selection")
+  const [battleState, setBattleState] = useState<BattleState>("mode-selection")
   const [selectedTopic, setSelectedTopic] = useState<string>("")
   const [roomId, setRoomId] = useState<string>("")
-  const [quiz, setQuiz] = useState<any | null>(null)
+  const [isRoomCreator, setIsRoomCreator] = useState(false)
+  const [opponent, setOpponent] = useState<Player | null>(null)
+  const [quiz, setQuiz] = useState<any>(null)
   const [currentPlayer] = useState<Player>({
     id: "player1",
     name: "You",
@@ -47,7 +50,7 @@ export default function BattleRoyalePage() {
     rank: 1247,
     wins: 23,
   })
-  const [opponent, setOpponent] = useState<Player | null>(null)
+  const battleStartedTriggeredRef = useRef(false)
 
   // Cleanup on unmount
   useEffect(() => {
@@ -55,6 +58,14 @@ export default function BattleRoyalePage() {
       battleService.disconnect()
     }
   }, [])
+
+  // Reset battle started ref when battle state changes
+  useEffect(() => {
+    if (battleState === "mode-selection" || battleState === "waiting") {
+      console.log("🔄 Main page - Resetting battle started ref")
+      battleStartedTriggeredRef.current = false
+    }
+  }, [battleState])
 
   // Handle opponent joining
   const handleOpponentJoined = (newOpponent: Player) => {
@@ -96,11 +107,19 @@ export default function BattleRoyalePage() {
     // Listen for battle started event to receive quiz data
     const handleBattleStarted = (event: CustomEvent) => {
       console.log("⚔️ Battle started event received in main page:", event.detail)
+      
+      // Prevent duplicate state transitions
+      if (battleStartedTriggeredRef.current) {
+        console.log("⚔️ Main page - Battle already started, ignoring duplicate event")
+        return
+      }
+      
       const { quiz } = event.detail
       console.log("⚔️ Main page - Quiz data received:", quiz ? "YES" : "NO")
       if (quiz) {
         console.log("📝 Quiz received in main page, transitioning to battle-quiz")
         console.log("📝 Current battle state:", battleState)
+        battleStartedTriggeredRef.current = true
         setQuiz(quiz)
         setBattleState("battle-quiz")
       } else {
@@ -127,9 +146,9 @@ export default function BattleRoyalePage() {
     }
   }, [battleState])
 
-  const handleTopicSelect = (topic: string) => {
+  const handleTopicSubmit = (topic: string) => {
     setSelectedTopic(topic)
-    setBattleState("mode-selection")
+    setBattleState("create-room")
   }
 
   const handleBattleStart = useCallback((generatedQuiz: any) => {
@@ -139,39 +158,43 @@ export default function BattleRoyalePage() {
 
   const handleCreateRoom = (generatedRoomId: string) => {
     setRoomId(generatedRoomId)
+    setIsRoomCreator(true)
     setBattleState("waiting")
   }
 
   const handleJoinRoom = (enteredRoomId: string) => {
     setRoomId(enteredRoomId)
+    setIsRoomCreator(false)
     setBattleState("waiting")
   }
 
   const handleBack = () => {
     switch (battleState) {
-      case "mode-selection":
-        setBattleState("topic-selection")
+      case "quiz-topic-input":
+        setBattleState("mode-selection")
         setSelectedTopic("")
         break
       case "create-room":
+        setBattleState("quiz-topic-input")
+        break
       case "join-room":
         setBattleState("mode-selection")
         break
       case "waiting":
-        setBattleState("mode-selection")
+        setBattleState(isRoomCreator ? "create-room" : "mode-selection")
         setRoomId("")
         setOpponent(null)
         battleService.disconnect()
         break
       case "vs-intro":
-        setBattleState("topic-selection")
+        setBattleState("mode-selection")
         setSelectedTopic("")
         setRoomId("")
         setOpponent(null)
         battleService.disconnect()
         break
       default:
-        setBattleState("topic-selection")
+        setBattleState("mode-selection")
     }
   }
 
@@ -180,32 +203,37 @@ export default function BattleRoyalePage() {
       <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} showSidebarToggle={false} />
 
       <div className="container mx-auto px-6 py-8 max-w-4xl">
-        {/* Header */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 p-3 rounded-full shadow-lg">
-              <Swords className="w-8 h-8 text-white" />
-            </div>
-          </div>
-          <h1
-            className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-8 pt-2"
-            style={{ position: "relative", top: "-8px", paddingBottom: "8px" }}
-          >
-            Battle Royale Quiz
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Challenge players worldwide in real-time quiz battles. Test your knowledge and climb the ranks!
-          </p>
-        </motion.div>
+        {/* Header - Only show on mode-selection */}
+        <AnimatePresence>
+          {battleState === "mode-selection" && (
+            <motion.div
+              className="text-center mb-12"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="flex items-center justify-center mb-4">
+                <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 p-3 rounded-full shadow-lg">
+                  <Swords className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <h1
+                className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-8 pt-2"
+                style={{ position: "relative", top: "-8px", paddingBottom: "8px" }}
+              >
+                Battle Royale Quiz
+              </h1>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                Challenge players worldwide in real-time quiz battles. Test your knowledge and climb the ranks!
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Back Button */}
         <AnimatePresence>
-          {battleState !== "topic-selection" && (
+          {battleState !== "mode-selection" && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -226,31 +254,30 @@ export default function BattleRoyalePage() {
 
         {/* Main Content */}
         <AnimatePresence mode="wait">
-          {battleState === "topic-selection" && (
+          {battleState === "mode-selection" && (
             <motion.div
-              key="topic-selection"
+              key="mode-selection"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
             >
-              <TopicSelector onTopicSelect={handleTopicSelect} />
+              <ModeSelection
+                onCreateRoom={() => setBattleState("quiz-topic-input")}
+                onJoinRoom={() => setBattleState("join-room")}
+              />
             </motion.div>
           )}
 
-          {battleState === "mode-selection" && (
+          {battleState === "quiz-topic-input" && (
             <motion.div
-              key="mode-selection"
+              key="quiz-topic-input"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <ModeSelection
-                selectedTopic={selectedTopic}
-                onCreateRoom={() => setBattleState("create-room")}
-                onJoinRoom={() => setBattleState("join-room")}
-              />
+              <QuizTopicInput onTopicSubmit={handleTopicSubmit} />
             </motion.div>
           )}
 
@@ -274,7 +301,7 @@ export default function BattleRoyalePage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <JoinRoom topic={selectedTopic} onRoomJoined={handleJoinRoom} />
+              <JoinRoom onRoomJoined={handleJoinRoom} />
             </motion.div>
           )}
 
@@ -309,7 +336,7 @@ export default function BattleRoyalePage() {
 
           {battleState === "vs-intro" && opponent && (
             <motion.div
-              key="vs-intro"
+              key={`vs-intro-${roomId}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -325,9 +352,27 @@ export default function BattleRoyalePage() {
             </motion.div>
           )}
 
-          {battleState === "battle-quiz" && quiz && (
+          {battleState === "battle-quiz" && (!quiz || !quiz.quiz || quiz.quiz.length === 0) && (
             <motion.div
-              key="battle-quiz"
+              key="battle-quiz-loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center min-h-[400px]"
+            >
+              <div className="text-center space-y-4">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"
+                />
+                <p className="text-gray-400">Loading quiz questions...</p>
+              </div>
+            </motion.div>
+          )}
+
+          {battleState === "battle-quiz" && quiz && quiz.quiz && quiz.quiz.length > 0 && (
+            <motion.div
+              key={`battle-quiz-${roomId}`}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -344,11 +389,9 @@ export default function BattleRoyalePage() {
 
 // Mode Selection Component
 function ModeSelection({
-  selectedTopic,
   onCreateRoom,
   onJoinRoom,
 }: {
-  selectedTopic: string
   onCreateRoom: () => void
   onJoinRoom: () => void
 }) {
@@ -357,7 +400,7 @@ function ModeSelection({
       <div className="text-center">
         <h2 className="text-3xl font-bold text-white mb-2">Choose Battle Mode</h2>
         <p className="text-gray-400">
-          Topic: <span className="text-emerald-400 font-semibold">{selectedTopic}</span>
+          Create a new battle room or join an existing one
         </p>
       </div>
 
@@ -372,7 +415,7 @@ function ModeSelection({
                 <Crown className="w-8 h-8 text-emerald-400" />
               </div>
               <h3 className="text-xl font-bold text-white">Create Battle Room</h3>
-              <p className="text-gray-400">Start a new battle and wait for challengers to join</p>
+              <p className="text-gray-400">Start a new battle and set your own quiz topic</p>
               <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
                 <span className="flex items-center">
                   <Users className="w-4 h-4 mr-1" />
@@ -380,7 +423,7 @@ function ModeSelection({
                 </span>
                 <span className="flex items-center">
                   <Zap className="w-4 h-4 mr-1" />
-                  Fast-paced
+                  Custom Topic
                 </span>
               </div>
             </CardContent>

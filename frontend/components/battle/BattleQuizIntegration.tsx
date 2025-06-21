@@ -1,21 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { BattleQuiz } from "./BattleQuiz"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Trophy, Clock, Users, Target } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { 
-  Trophy, 
-  Target, 
-  Users, 
-  Clock,
-  Zap,
-  Crown
-} from "lucide-react"
+import { BattleQuiz } from "./BattleQuiz"
 import { battleService } from "@/lib/battleService"
-import { battleQuizService } from "@/lib/battleQuizService"
 
 interface BattleQuizIntegrationProps {
   roomId: string
@@ -27,7 +18,21 @@ interface PlayerScore {
   userId: string
   username: string
   score: number
+  totalQuestions: number
   timeSpent: number
+  accuracy: number
+  completedAt?: number
+}
+
+interface WaitingForResultsProps {
+  currentPlayerScore: {
+    score: number
+    totalQuestions: number
+    timeSpent: number
+    accuracy: number
+  }
+  playerCount: number
+  onManualCheck?: () => void
 }
 
 export function BattleQuizIntegration({ 
@@ -35,19 +40,69 @@ export function BattleQuizIntegration({
   topic, 
   onBattleComplete 
 }: BattleQuizIntegrationProps) {
-  const [battleState, setBattleState] = useState<"waiting" | "quiz" | "results" | "complete">("waiting")
+  const [battleState, setBattleState] = useState<"waiting" | "quiz" | "results" | "complete" | "waiting_for_others">("waiting")
   const [playerScores, setPlayerScores] = useState<{ [userId: string]: PlayerScore }>({})
   const [currentUser, setCurrentUser] = useState(battleService.getCurrentUser())
   const [battleData, setBattleData] = useState(battleService.getCurrentBattle())
   const [timeLimit, setTimeLimit] = useState(300) // 5 minutes
   const [timeRemaining, setTimeRemaining] = useState(timeLimit)
+  const [quizData, setQuizData] = useState<any>(null)
+  const [loadingQuiz, setLoadingQuiz] = useState(false)
+  const [quizStartTime, setQuizStartTime] = useState<number | null>(null)
+  const [waitingForResults, setWaitingForResults] = useState(false)
+  const [currentPlayerScore, setCurrentPlayerScore] = useState<any>(null)
+  const [playerCount, setPlayerCount] = useState(0)
+  const quizGeneratedRef = useRef(false)
+  const resultsCalculatedRef = useRef(false)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    if (!topic || !timeLimit) return
+
     // Listen for battle start event
-    const handleBattleStarted = (event: CustomEvent) => {
-      console.log("⚔️ Battle started, beginning quiz phase")
-      setBattleState("quiz")
-      setTimeRemaining(timeLimit)
+    const handleBattleStarted = async (event: CustomEvent) => {
+      console.log("⚔️ Battle started, generating quiz...")
+      
+      // Prevent duplicate quiz generation
+      if (quizGeneratedRef.current) {
+        console.log("⚔️ Quiz already generated, ignoring duplicate event")
+        return
+      }
+      
+      quizGeneratedRef.current = true
+      setLoadingQuiz(true)
+      
+      try {
+        // Generate the quiz when battle starts
+        const response = await fetch("/api/generate-battle-quiz", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            topic: topic,
+            difficulty: "intermediate",
+            num_questions: 5,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Failed to generate battle quiz")
+        }
+
+        const quiz = await response.json()
+        setQuizData(quiz)
+        setBattleState("quiz")
+        setTimeRemaining(timeLimit)
+        setQuizStartTime(Date.now())
+        console.log("✅ Quiz generated successfully:", quiz)
+      } catch (error) {
+        console.error("❌ Error generating quiz:", error)
+        // Handle error - maybe show error state
+      } finally {
+        setLoadingQuiz(false)
+      }
     }
 
     window.addEventListener("battleStarted", handleBattleStarted as EventListener)
@@ -55,7 +110,25 @@ export function BattleQuizIntegration({
     return () => {
       window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
     }
-  }, [timeLimit])
+  }, [topic, timeLimit])
+
+  // Cleanup effect to reset refs when component unmounts
+  useEffect(() => {
+    return () => {
+      console.log("🧹 BattleQuizIntegration - Component unmounting, cleaning up...")
+      quizGeneratedRef.current = false
+      
+      // Clear polling interval
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+
+      // Clean up localStorage for this battle
+      const battleKey = `battle_${roomId}`
+      localStorage.removeItem(battleKey)
+      console.log("🧹 Cleared localStorage for battle:", battleKey)
+    }
+  }, [roomId])
 
   // Timer for quiz phase
   useEffect(() => {
@@ -81,48 +154,118 @@ export function BattleQuizIntegration({
     calculateFinalResults()
   }
 
-  const handleQuizComplete = (score: number, totalQuestions: number) => {
-    if (!currentUser) return
-
-    const timeSpent = timeLimit - timeRemaining
-    const playerScore: PlayerScore = {
-      userId: currentUser.id,
-      username: currentUser.name,
-      score,
-      timeSpent
+  const handleQuizComplete = async (score: number, totalQuestions: number) => {
+    console.log("🎯 handleQuizComplete called with score:", score, "totalQuestions:", totalQuestions)
+    
+    if (!currentUser || !quizStartTime) {
+      console.log("❌ Missing currentUser or quizStartTime")
+      console.log("❌ currentUser:", currentUser)
+      console.log("❌ quizStartTime:", quizStartTime)
+      return
     }
 
-    setPlayerScores(prev => ({
-      ...prev,
-      [currentUser.id]: playerScore
-    }))
-
-    // Emit score to other players
-    battleService.emitQuestionAnswered(roomId, "quiz_complete", true)
+    const timeSpent = Math.floor((Date.now() - quizStartTime) / 1000)
+    const accuracy = Math.round((score / totalQuestions) * 100)
     
-    // Wait a bit for other players to finish, then show results
-    setTimeout(() => {
-      setBattleState("results")
-      calculateFinalResults()
-    }, 3000)
+    const playerScore = {
+      score,
+      totalQuestions,
+      timeSpent,
+      accuracy
+    }
+
+    console.log("🎯 Player score data:", playerScore)
+    setCurrentPlayerScore(playerScore)
+
+    try {
+      console.log("🎯 Submitting score to localStorage...")
+      
+      // Store score in localStorage
+      const battleKey = `battle_${roomId}`
+      const existingScores = JSON.parse(localStorage.getItem(battleKey) || '{}')
+      existingScores[currentUser.id] = playerScore
+      localStorage.setItem(battleKey, JSON.stringify(existingScores))
+
+      setPlayerScores(existingScores)
+      setPlayerCount(Object.keys(existingScores).length)
+
+      console.log(`🎯 Player ${currentUser.name} completed quiz: ${score}/${totalQuestions} (${accuracy}%) in ${timeSpent}s`)
+      console.log(`🎯 Stored scores in localStorage:`, existingScores)
+
+      // Show waiting state for other players
+      setWaitingForResults(true)
+      setBattleState("waiting_for_others")
+      
+      // Check for both players' scores every second
+      const checkInterval = setInterval(() => {
+        const storedScores = JSON.parse(localStorage.getItem(battleKey) || '{}')
+        const scoreCount = Object.keys(storedScores).length
+        
+        console.log(`🎯 Checking scores: ${scoreCount} players completed`)
+        setPlayerCount(scoreCount)
+        
+        if (scoreCount >= 2) {
+          clearInterval(checkInterval)
+          console.log("🎯 Both players completed, showing comparison")
+          setPlayerScores(storedScores)
+          setWaitingForResults(false)
+          setBattleState("complete")
+        }
+      }, 1000)
+
+      // Fallback: show results after 5 seconds even if only one player
+      setTimeout(() => {
+        clearInterval(checkInterval)
+        const storedScores = JSON.parse(localStorage.getItem(battleKey) || '{}')
+        if (Object.keys(storedScores).length === 1) {
+          console.log("🎯 Fallback: showing results with single player")
+          setPlayerScores(storedScores)
+          setWaitingForResults(false)
+          setBattleState("complete")
+        }
+      }, 5000)
+
+    } catch (error) {
+      console.error("❌ Error submitting score:", error)
+      // Show error state to user
+      alert(`Failed to submit score: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleManualCheck = () => {
+    const battleKey = `battle_${roomId}`
+    const storedScores = JSON.parse(localStorage.getItem(battleKey) || '{}')
+    const scoreCount = Object.keys(storedScores).length
+    
+    console.log("🎯 Manual check - scores:", storedScores)
+    setPlayerCount(scoreCount)
+    
+    if (scoreCount >= 2) {
+      setPlayerScores(storedScores)
+      setWaitingForResults(false)
+      setBattleState("complete")
+    }
   }
 
   const calculateFinalResults = () => {
     const scores = Object.values(playerScores)
     if (scores.length === 0) return
 
-    // Sort by score (highest first), then by time (fastest first)
+    console.log("🏆 Calculating final results:", scores)
+
+    // Sort by score (highest first), then by time (fastest first), then by completion time
     const sortedScores = scores.sort((a, b) => {
       if (a.score !== b.score) {
         return b.score - a.score
       }
-      return a.timeSpent - b.timeSpent
+      if (a.timeSpent !== b.timeSpent) {
+        return a.timeSpent - b.timeSpent
+      }
+      return (a.completedAt || 0) - (b.completedAt || 0)
     })
 
     const winner = sortedScores[0]
-    
-    // Emit battle end
-    battleService.emitBattleEnd(roomId, winner.userId)
+    console.log(`🏆 Winner determined: ${winner.username} with ${winner.score}/${winner.totalQuestions} (${winner.accuracy}%) in ${winner.timeSpent}s`)
     
     // Call completion callback
     const scoreMap: { [userId: string]: number } = {}
@@ -132,6 +275,7 @@ export function BattleQuizIntegration({
     
     onBattleComplete?.(winner.userId, scoreMap)
     setBattleState("complete")
+    resultsCalculatedRef.current = true
   }
 
   const formatTime = (seconds: number): string => {
@@ -195,92 +339,85 @@ export function BattleQuizIntegration({
         </motion.div>
 
         {/* Quiz Component */}
-        <BattleQuiz
-          topic={topic}
-          difficulty="intermediate"
-          numQuestions={5}
-          onQuizComplete={handleQuizComplete}
-          onQuizError={(error) => console.error("Quiz error:", error)}
-        />
+        {loadingQuiz ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center min-h-[400px]"
+          >
+            <div className="text-center space-y-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"
+              />
+              <p className="text-gray-400">Generating quiz questions...</p>
+            </div>
+          </motion.div>
+        ) : quizData ? (
+          <BattleQuiz
+            quiz={quizData}
+            onQuizComplete={handleQuizComplete}
+          />
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center min-h-[400px]"
+          >
+            <div className="text-center space-y-4">
+              <p className="text-red-400">Failed to load quiz. Please try again.</p>
+            </div>
+          </motion.div>
+        )}
       </div>
     )
   }
 
-  if (battleState === "results") {
-    const scores = Object.values(playerScores)
-    const sortedScores = scores.sort((a, b) => b.score - a.score)
-    const winner = sortedScores[0]
-
+  if (battleState === "waiting_for_others") {
+    console.log("🎯 Rendering waiting_for_others state")
+    
+    if (waitingForResults && currentPlayerScore) {
+      return (
+        <WaitingForResults
+          currentPlayerScore={currentPlayerScore}
+          playerCount={playerCount}
+          onManualCheck={handleManualCheck}
+        />
+      )
+    }
+    
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="space-y-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center space-y-8"
       >
-        {/* Winner Announcement */}
-        <div className="text-center space-y-4">
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              rotate: [0, 360],
-            }}
-            transition={{ duration: 1 }}
-            className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center shadow-2xl"
-          >
-            <Crown className="w-12 h-12 text-white" />
-          </motion.div>
-          
-          <h2 className="text-4xl font-bold text-white">Battle Results</h2>
-          <p className="text-xl text-gray-400">
-            Winner: <span className="text-yellow-400 font-bold">{winner?.username}</span>
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 5, -5, 0],
+          }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          className="w-24 h-24 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-400/20 rounded-full flex items-center justify-center mb-6"
+        >
+          <Trophy className="w-12 h-12 text-green-400" />
+        </motion.div>
+
+        <div className="space-y-4">
+          <h2 className="text-3xl font-bold text-white mb-2">Quiz Completed!</h2>
+          <p className="text-gray-400 text-lg">
+            Great job! Waiting for opponent to finish...
           </p>
         </div>
 
-        {/* Scoreboard */}
-        <Card className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-white">Final Standings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {sortedScores.map((player, index) => (
-                <motion.div
-                  key={player.userId}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
-                    index === 0 
-                      ? "bg-yellow-500/20 border border-yellow-500/30" 
-                      : "bg-gray-800/30 border border-gray-700/30"
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      index === 0 
-                        ? "bg-yellow-500 text-white" 
-                        : "bg-gray-600 text-gray-300"
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="text-white font-semibold">{player.username}</div>
-                      <div className="text-gray-400 text-sm">
-                        Time: {formatTime(player.timeSpent)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-white">{player.score}/5</div>
-                    <div className="text-gray-400 text-sm">
-                      {Math.round((player.score / 5) * 100)}%
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          className="text-green-400 text-lg font-semibold"
+        >
+          Waiting for opponent...
+        </motion.div>
       </motion.div>
     )
   }
