@@ -59,36 +59,6 @@ MindSnap is designed to make learning both rewarding and competitive:
 
 ---
 
-## Project File Structure
-
-Below is an overview of the main project structure, highlighting key directories and files:
-
-```
-MindSnap/
-├── frontend/
-│   ├── components/
-│   │   ├── ui/
-│   │   │   └── modal.tsx           # Reusable modal component for dialogs and popups
-│   │   ├── leaderboard.tsx         # Main leaderboard UI and logic
-│   │   └── ...                     # Other UI and feature components (Navbar, Cards, etc.)
-│   ├── pages/
-│   │   └── ...                     # Application pages (e.g., Home, Profile, Quiz)
-│   ├── styles/
-│   │   └── ...                     # Tailwind and custom CSS files
-│   └── ...                         # App entry point, configuration, utilities
-├── backend/
-│   ├── api/
-│   │   └── ...                     # API endpoints for quizzes, users, rewards, authentication
-│   ├── services/
-│   │   └── ...                     # Business logic, blockchain integration, leaderboard calculations
-│   └── ...                         # Database models, configuration, middleware
-├── public/
-│   └── ...                         # Static assets (images, icons, etc.)
-├── README.md                       # Project documentation
-└── ...                             # Project configs, package.json, environment files, etc.
-```
-
----
 
 ## Installation & Setup
 
