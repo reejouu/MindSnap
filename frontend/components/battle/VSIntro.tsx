@@ -29,29 +29,42 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
   const [battleStarted, setBattleStarted] = useState(false)
   const [isRoomCreator, setIsRoomCreator] = useState(false)
   const [waitingForCreator, setWaitingForCreator] = useState(false)
+  const [error, setError] = useState<string>("")
 
   // Check if current user is the room creator (first player)
   useEffect(() => {
-    const currentUser = battleService.getCurrentUser()
-    const currentBattle = battleService.getCurrentBattle()
+    const determineRoomCreator = () => {
+      const currentUser = battleService.getCurrentUser()
+      const currentBattle = battleService.getCurrentBattle()
+      
+      console.log("🔍 VSIntro - Current user:", currentUser)
+      console.log("🔍 VSIntro - Current battle:", currentBattle)
+      
+      if (currentUser && currentBattle && currentBattle.players.length > 0) {
+        // Room creator is the first player in the battle
+        const isCreator = currentBattle.players[0]?.userId === currentUser.id
+        setIsRoomCreator(isCreator)
+        setWaitingForCreator(!isCreator)
+        console.log(`🎯 User ${currentUser.name} is ${isCreator ? 'room creator' : 'joiner'}`)
+        console.log(`🎯 Battle players:`, currentBattle.players)
+        return true
+      } else {
+        console.log("❌ Could not determine room creator status")
+        console.log("❌ Current user:", currentUser)
+        console.log("❌ Current battle:", currentBattle)
+        return false
+      }
+    }
+
+    // Try to determine immediately
+    const success = determineRoomCreator()
     
-    console.log("🔍 VSIntro - Current user:", currentUser)
-    console.log("🔍 VSIntro - Current battle:", currentBattle)
-    
-    if (currentUser && currentBattle) {
-      // Room creator is the first player in the battle
-      const isCreator = currentBattle.players[0]?.userId === currentUser.id
-      setIsRoomCreator(isCreator)
-      setWaitingForCreator(!isCreator)
-      console.log(`🎯 User ${currentUser.name} is ${isCreator ? 'room creator' : 'joiner'}`)
-      console.log(`🎯 Battle players:`, currentBattle.players)
-    } else {
-      console.log("❌ Could not determine room creator status")
-      console.log("❌ Current user:", currentUser)
-      console.log("❌ Current battle:", currentBattle)
-      // Fallback: if we can't determine, assume current user is creator
-      setIsRoomCreator(true)
-      setWaitingForCreator(false)
+    // If we couldn't determine, try again after a short delay
+    if (!success) {
+      const timer = setTimeout(() => {
+        determineRoomCreator()
+      }, 1000)
+      return () => clearTimeout(timer)
     }
   }, [])
 
@@ -69,6 +82,21 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
             setIsRoomCreator(isCreator)
             setWaitingForCreator(!isCreator)
             console.log(`🔄 VSIntro - Updated: User ${currentUser.name} is ${isCreator ? 'room creator' : 'joiner'}`)
+            
+            // Update the current battle in the service
+            battleService.setCurrentBattle(updatedBattle)
+
+            // If we have 2 players and no opponent is set, trigger opponent joined
+            if (updatedBattle.players.length === 2) {
+              const opponent = updatedBattle.players.find(p => p.userId !== currentUser.id)
+              if (opponent) {
+                console.log("🎯 Force triggering opponent joined for:", opponent.username)
+                // Dispatch custom event to trigger opponent joined
+                window.dispatchEvent(new CustomEvent("opponentJoined", { 
+                  detail: { username: opponent.username, userId: opponent.userId }
+                }))
+              }
+            }
           }
         }
       } catch (error) {
@@ -76,9 +104,9 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
       }
     }
 
-    // Refresh immediately and then every 2 seconds
+    // Refresh immediately and then every 3 seconds
     refreshBattleData()
-    const interval = setInterval(refreshBattleData, 2000)
+    const interval = setInterval(refreshBattleData, 3000)
 
     return () => clearInterval(interval)
   }, [roomId])
@@ -95,6 +123,8 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
     const handleBattleStarted = (event: CustomEvent) => {
       console.log("⚔️ VSIntro - Battle started event received:", event.detail)
       setBattleStarted(true)
+      setCountdown(null)
+      setWaitingForCreator(false)
     }
 
     const handleBattlePlayersUpdated = (event: CustomEvent) => {
@@ -108,6 +138,8 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
 
     const handleBattleReady = (event: CustomEvent) => {
       console.log("🚀 VSIntro - Battle ready event received:", event.detail)
+      // Ensure we're not waiting for creator if battle is ready
+      setWaitingForCreator(false)
     }
 
     window.addEventListener("battleCountdown", handleBattleCountdown as EventListener)
@@ -123,30 +155,66 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
     }
   }, [])
 
-  const handleStartBattle = () => {
+  const handleStartBattle = async () => {
     console.log("🚀 Room creator starting battle")
+    setError("") // Clear any previous errors
+    
+    // Ensure socket is connected
+    const isConnected = await battleService.ensureConnection()
+    if (!isConnected) {
+      console.error("❌ Socket not connected, cannot start battle")
+      setError("Socket connection failed. Please try again.")
+      return
+    }
+    
+    // Double-check we are the room creator
+    const currentUser = battleService.getCurrentUser()
+    const currentBattle = battleService.getCurrentBattle()
+    
+    if (!currentUser || !currentBattle) {
+      console.error("❌ Missing user or battle data")
+      setError("Missing user or battle data. Please refresh the page.")
+      return
+    }
+    
+    const isCreator = currentBattle.players[0]?.userId === currentUser.id
+    if (!isCreator) {
+      console.error("❌ User is not the room creator")
+      setError("You are not the room creator. Only the room creator can start the battle.")
+      return
+    }
+    
+    console.log("✅ Confirmed room creator, starting countdown...")
     setCountdown(3)
     
-    // Emit countdown to all players
-    battleService.emitBattleCountdown(roomId, 3)
-    
-    // Start countdown timer
-    const countdownTimer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev && prev > 1) {
-          const newCountdown = prev - 1
-          // Emit countdown update to all players
-          battleService.emitBattleCountdown(roomId, newCountdown)
-          return newCountdown
-        } else {
-          clearInterval(countdownTimer)
-          // Emit battle started event
-          battleService.emitBattleStart(roomId)
-          setBattleStarted(true)
-          return null
-        }
-      })
-    }, 1000)
+    try {
+      // Emit countdown to all players
+      battleService.emitBattleCountdown(roomId, 3)
+      
+      // Start countdown timer
+      const countdownTimer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev && prev > 1) {
+            const newCountdown = prev - 1
+            console.log(`⏰ Countdown: ${newCountdown}`)
+            // Emit countdown update to all players
+            battleService.emitBattleCountdown(roomId, newCountdown)
+            return newCountdown
+          } else {
+            clearInterval(countdownTimer)
+            console.log("⚔️ Countdown finished, starting battle...")
+            // Emit battle started event
+            battleService.emitBattleStart(roomId)
+            setBattleStarted(true)
+            return null
+          }
+        })
+      }, 1000)
+    } catch (error) {
+      console.error("❌ Error starting battle:", error)
+      setCountdown(null)
+      setError("Failed to start battle. Please try again.")
+    }
   }
 
   const handleForceRefresh = async () => {
@@ -162,7 +230,7 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
           setWaitingForCreator(!isCreator)
           
           // If we have 2 players and no opponent is set, trigger opponent joined
-          if (updatedBattle.players.length === 2 && !opponent) {
+          if (updatedBattle.players.length === 2) {
             const opponent = updatedBattle.players.find(p => p.userId !== currentUser.id)
             if (opponent) {
               console.log("🎯 Force triggering opponent joined for:", opponent.username)
@@ -458,6 +526,25 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
       >
         Room ID: <code className="bg-gray-800/50 px-2 py-1 rounded">{roomId}</code>
         
+        {/* Error Display */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg"
+          >
+            <p className="text-red-400 text-sm font-medium">⚠️ {error}</p>
+            {isRoomCreator && (
+              <Button
+                onClick={handleStartBattle}
+                className="mt-2 w-full text-xs py-1 bg-red-500/30 text-red-300 border-red-500/50 hover:bg-red-500/40"
+              >
+                🔄 Retry Starting Battle
+              </Button>
+            )}
+          </motion.div>
+        )}
+        
         {/* Debug Info */}
         <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
           <p className="text-xs text-gray-400 mb-2">Debug Info:</p>
@@ -467,6 +554,7 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
             <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
             <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
             <p>Socket Connected: {battleService.isConnected() ? 'Yes' : 'No'}</p>
+            <p>Battle Status: {battleService.getCurrentBattle()?.status || 'Unknown'}</p>
           </div>
           
           {/* Manual trigger button for testing */}
@@ -483,6 +571,26 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
             >
               🔄 Force Refresh Battle Data
             </Button>
+            <Button
+              onClick={async () => {
+                const currentUser = battleService.getCurrentUser()
+                if (currentUser) {
+                  console.log("🔄 Manually reconnecting socket...")
+                  await battleService.connect(currentUser)
+                }
+              }}
+              className="w-full text-xs py-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+            >
+              🔌 Manual Reconnect Socket
+            </Button>
+            {isRoomCreator && (
+              <Button
+                onClick={handleStartBattle}
+                className="w-full text-xs py-1 bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30"
+              >
+                🚀 Force Start Battle
+              </Button>
+            )}
           </div>
         </div>
       </motion.div>

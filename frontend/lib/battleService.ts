@@ -267,14 +267,20 @@ class BattleService {
   // Emit battle start event to synchronize all players
   emitBattleStart(battleId: string) {
     if (this.socket) {
+      console.log("🚀 Emitting battle_start for battle:", battleId);
       this.socket.emit("battle_start", { battleId });
+    } else {
+      console.error("❌ Socket not connected, cannot emit battle_start");
     }
   }
 
   // Emit countdown update to synchronize both players
   emitBattleCountdown(battleId: string, countdown: number) {
     if (this.socket) {
+      console.log("⏰ Emitting battle_countdown for battle:", battleId, "countdown:", countdown);
       this.socket.emit("battle_countdown", { battleId, countdown });
+    } else {
+      console.error("❌ Socket not connected, cannot emit battle_countdown");
     }
   }
 
@@ -295,6 +301,26 @@ class BattleService {
     return this.socket?.connected || false;
   }
 
+  // Ensure socket is connected, reconnect if needed
+  async ensureConnection(): Promise<boolean> {
+    if (this.socket?.connected) {
+      return true;
+    }
+    
+    if (this.currentUser) {
+      console.log("🔄 Socket not connected, attempting to reconnect...");
+      try {
+        await this.connect(this.currentUser);
+        return this.socket?.connected || false;
+      } catch (error) {
+        console.error("❌ Failed to reconnect socket:", error);
+        return false;
+      }
+    }
+    
+    return false;
+  }
+
   // Get current battle
   getCurrentBattle(): Battle | null {
     return this.currentBattle;
@@ -303,6 +329,11 @@ class BattleService {
   // Get current user
   getCurrentUser(): User | null {
     return this.currentUser;
+  }
+
+  // Set current battle (for external updates)
+  setCurrentBattle(battle: Battle) {
+    this.currentBattle = battle;
   }
 
   // Disconnect socket
