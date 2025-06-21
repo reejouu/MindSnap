@@ -9,3 +9,10 @@ openai-whisper @ git+https://github.com/openai/whisper.git
 ffmpeg-python>=0.2.0
 pytesseract>=0.3.10
 Pillow>=9.0.0
+PyMuPDF>=1.23.0
+nltk>=3.8.1
+numpy>=1.26.0
+pdf2image>=1.16.3
+transformers>=4.38.0
+sentence-transformers>=2.5.0
+scikit-learn>=1.4.0

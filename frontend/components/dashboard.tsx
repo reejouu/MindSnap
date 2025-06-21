@@ -36,6 +36,7 @@ import {
   MicOff,
   Sparkles,
   Highlighter,
+  Download,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -74,6 +75,7 @@ export default function Dashboard({
     name: string
     size: string
   } | null>(null)
+  const [highlightedPdf, setHighlightedPdf] = useState<{ name: string; url: string } | null>(null)
   const [textInput, setTextInput] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
@@ -666,6 +668,47 @@ export default function Dashboard({
     }
   }
 
+  // Add this new function to handle highlight & generate for PDF
+  const handleHighlightAndGeneratePdf = async () => {
+    if (!pdfFile) {
+      toast.error("Please upload a PDF file first")
+      return
+    }
+
+    setLoading(true)
+    setLoadingType("pdf")
+    try {
+      const formData = new FormData()
+      formData.append("file", pdfFile)
+
+      // Call the new API endpoint for highlighting
+      const response = await fetch("/api/highlighter/highlight-pdf", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to highlight PDF")
+      }
+
+      // Get the output PDF as a blob
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+
+      setHighlightedPdf({ name: "highlighted.pdf", url })
+
+      toast.success("Highlighted PDF is ready for download!")
+      setPdfPreview(null)
+      setPdfFile(null)
+    } catch (error) {
+      console.error("Error highlighting PDF:", error)
+      toast.error("Failed to highlight PDF")
+    } finally {
+      setLoading(false)
+      setLoadingType(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0f0a] text-white">
       <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -934,13 +977,13 @@ export default function Dashboard({
                                   </Button>
                                   <Button
                                     className="w-full bg-green-500 hover:bg-green-600 text-white"
-                                    onClick={handleGenerateCardsFromPdf}
+                                    onClick={handleHighlightAndGeneratePdf}
                                     disabled={loading}
                                   >
                                     {loading && loadingType === "pdf" ? (
                                       <>
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Generating...
+                                        Highlighting...
                                       </>
                                     ) : (
                                       <>
@@ -950,6 +993,45 @@ export default function Dashboard({
                                     )}
                                   </Button>
                                 </div>
+                              </div>
+                            )}
+
+                            {/* Highlighted PDF Download Button */}
+                            {highlightedPdf && (
+                              <div className="p-4 bg-gradient-to-r from-gray-800/80 to-green-500/5 rounded-lg border border-green-500/20">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div>
+                                    <h4 className="font-medium text-white">{highlightedPdf.name}</h4>
+                                    <p className="text-sm text-gray-400">Ready to download</p>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (highlightedPdf) {
+                                        window.URL.revokeObjectURL(highlightedPdf.url)
+                                      }
+                                      setHighlightedPdf(null)
+                                    }}
+                                    className="text-gray-400 hover:text-white"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <Button
+                                  className="w-full bg-green-500 hover:bg-green-600 text-white"
+                                  onClick={() => {
+                                    const a = document.createElement("a")
+                                    a.href = highlightedPdf.url
+                                    a.download = highlightedPdf.name
+                                    document.body.appendChild(a)
+                                    a.click()
+                                    a.remove()
+                                  }}
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Download
+                                </Button>
                               </div>
                             )}
 
