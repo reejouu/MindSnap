@@ -24,7 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({
     { tab: "Dashboard", path: "/dashboard" },
     { tab: "Leaderboard", path: "/leaderboard" },
     { tab: "QuizBattle", path: "/battle" },
-    { tab: "About us", path: "#about-us" }
+    { tab: "About us", path: "/about" }
   ];
 
 
