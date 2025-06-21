@@ -807,7 +807,7 @@ export default function Dashboard({
               </div>
               <div className="hidden md:flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-full border border-emerald-500/20">
                 <Calendar className="w-5 h-5 text-emerald-400" />
-                <span className="text-sm font-medium text-white">Today, Dec 14</span>
+                <span className="text-sm font-medium text-white">Today, {new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               </div>
             </div>
 
