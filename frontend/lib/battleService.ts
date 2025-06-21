@@ -32,6 +32,7 @@ class BattleService {
   // Initialize socket connection
   connect(user: User) {
     this.currentUser = user;
+    console.log("🔌 Connecting to battle server for user:", user.name);
     
     // Connect to the standalone Socket.IO server on port 3001
     this.socket = io("http://localhost:3001", {
@@ -47,36 +48,41 @@ class BattleService {
     if (!this.socket) return;
 
     this.socket.on("connect", () => {
-      console.log("Connected to battle server");
+      console.log("✅ Connected to battle server");
     });
 
     this.socket.on("disconnect", () => {
-      console.log("Disconnected from battle server");
+      console.log("❌ Disconnected from battle server");
     });
 
     this.socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
+      console.error("❌ Socket connection error:", error);
     });
 
     this.socket.on("opponent_joined", (data: { username: string; userId: string }) => {
-      console.log("Opponent joined:", data.username);
+      console.log("🎯 Opponent joined:", data.username);
       // Emit custom event for React components
       window.dispatchEvent(new CustomEvent("opponentJoined", { detail: data }));
     });
 
     this.socket.on("battle_players_updated", (data: { players: BattlePlayer[]; playerCount: number }) => {
-      console.log("Battle players updated:", data.players);
+      console.log("📊 Battle players updated:", data.players);
       window.dispatchEvent(new CustomEvent("battlePlayersUpdated", { detail: data }));
     });
 
     this.socket.on("battle_ready", (data: { players: BattlePlayer[]; battleId: string }) => {
-      console.log("Battle ready with 2 players:", data.players);
+      console.log("🚀 Battle ready with 2 players:", data.players);
       window.dispatchEvent(new CustomEvent("battleReady", { detail: data }));
     });
 
     this.socket.on("battle_started", (data: { battleId: string }) => {
-      console.log("Battle started:", data.battleId);
+      console.log("⚔️ Battle started:", data.battleId);
       window.dispatchEvent(new CustomEvent("battleStarted", { detail: data }));
+    });
+
+    this.socket.on("battle_countdown", (data: { battleId: string; countdown: number }) => {
+      console.log("⏰ Battle countdown:", data.countdown);
+      window.dispatchEvent(new CustomEvent("battleCountdown", { detail: data }));
     });
 
     this.socket.on("battle_updated", (battle: Battle) => {
@@ -92,6 +98,8 @@ class BattleService {
   // Create a new battle room
   async createBattle(topic: string, user: User): Promise<Battle> {
     try {
+      console.log("🏗️ Creating battle for topic:", topic, "user:", user.name);
+      
       const response = await fetch("/api/battle/create", {
         method: "POST",
         headers: {
@@ -106,19 +114,23 @@ class BattleService {
 
       const battle = await response.json();
       this.currentBattle = battle;
+      console.log("✅ Battle created:", battle._id);
 
       // Join socket room
       if (this.socket) {
+        console.log("🔗 Emitting join_battle for creator:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
           battleId: battle._id, 
           username: user.name,
           userId: user.id 
         });
+      } else {
+        console.log("❌ Socket not connected for battle creation");
       }
 
       return battle;
     } catch (error) {
-      console.error("Error creating battle:", error);
+      console.error("❌ Error creating battle:", error);
       throw error;
     }
   }
@@ -126,6 +138,8 @@ class BattleService {
   // Join an existing battle
   async joinBattle(battleId: string, user: User): Promise<Battle> {
     try {
+      console.log("🎯 Joining battle:", battleId, "user:", user.name);
+      
       const response = await fetch("/api/battle/join", {
         method: "POST",
         headers: {
@@ -140,19 +154,23 @@ class BattleService {
 
       const battle = await response.json();
       this.currentBattle = battle;
+      console.log("✅ Battle joined:", battle._id);
 
       // Join socket room
       if (this.socket) {
+        console.log("🔗 Emitting join_battle for joiner:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
           battleId: battle._id, 
           username: user.name,
           userId: user.id 
         });
+      } else {
+        console.log("❌ Socket not connected for battle joining");
       }
 
       return battle;
     } catch (error) {
-      console.error("Error joining battle:", error);
+      console.error("❌ Error joining battle:", error);
       throw error;
     }
   }
@@ -231,6 +249,13 @@ class BattleService {
   emitBattleStart(battleId: string) {
     if (this.socket) {
       this.socket.emit("battle_start", { battleId });
+    }
+  }
+
+  // Emit countdown update to synchronize both players
+  emitBattleCountdown(battleId: string, countdown: number) {
+    if (this.socket) {
+      this.socket.emit("battle_countdown", { battleId, countdown });
     }
   }
 

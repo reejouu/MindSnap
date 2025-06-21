@@ -17,11 +17,14 @@ io.on("connection", (socket) => {
 
   socket.on("join_battle", async (data) => {
     const { battleId, username, userId } = data;
+    console.log(`🔗 User ${username} (${userId}) attempting to join battle ${battleId}`);
+    
     socket.join(battleId);
     
     // Store player info
     if (!activeBattles.has(battleId)) {
       activeBattles.set(battleId, []);
+      console.log(`📝 Created new battle entry for ${battleId}`);
     }
     
     const battlePlayers = activeBattles.get(battleId);
@@ -30,27 +33,30 @@ io.on("connection", (socket) => {
     if (!existingPlayer) {
       battlePlayers.push({ userId, username, socketId: socket.id });
       activeBattles.set(battleId, battlePlayers);
-      console.log(`User ${username} joined battle ${battleId}`);
+      console.log(`✅ User ${username} joined battle ${battleId}`);
     } else {
       // Update socket ID if player reconnects
       existingPlayer.socketId = socket.id;
-      console.log(`User ${username} reconnected to battle ${battleId}`);
+      console.log(`🔄 User ${username} reconnected to battle ${battleId}`);
     }
     
-    // Notify other players in the room about the new joiner
-    socket.to(battleId).emit("opponent_joined", { username, userId });
-    
-    // Emit updated player list to ALL players in the room (including the joiner)
+    // Always emit updated player list to ALL players in the room (including the joiner)
     io.to(battleId).emit("battle_players_updated", {
       players: battlePlayers,
       playerCount: battlePlayers.length
     });
     
-    console.log(`Battle ${battleId} now has ${battlePlayers.length} players:`, battlePlayers.map(p => p.username));
+    console.log(`📊 Battle ${battleId} now has ${battlePlayers.length} players:`, battlePlayers.map(p => p.username));
+    
+    // If this is not the first player, notify other players about the new joiner
+    if (battlePlayers.length > 1) {
+      socket.to(battleId).emit("opponent_joined", { username, userId });
+      console.log(`🎉 Emitted opponent_joined for ${username} to other players in ${battleId}`);
+    }
     
     // If we have exactly 2 players, trigger battle start for all players
     if (battlePlayers.length === 2) {
-      console.log(`Battle ${battleId} is ready to start with 2 players!`);
+      console.log(`🚀 Battle ${battleId} is ready to start with 2 players!`);
       io.to(battleId).emit("battle_ready", {
         players: battlePlayers,
         battleId: battleId
@@ -60,8 +66,14 @@ io.on("connection", (socket) => {
 
   socket.on("battle_start", (data) => {
     const { battleId } = data;
-    console.log(`Battle ${battleId} starting for all players`);
+    console.log(`⚔️ Battle ${battleId} starting for all players`);
     io.to(battleId).emit("battle_started", { battleId });
+  });
+
+  socket.on("battle_countdown", (data) => {
+    const { battleId, countdown } = data;
+    console.log(`⏰ Battle countdown ${countdown} for battle ${battleId}`);
+    io.to(battleId).emit("battle_countdown", { battleId, countdown });
   });
 
   socket.on("question_answered", (data) => {
@@ -93,7 +105,7 @@ io.on("connection", (socket) => {
       const playerIndex = players.findIndex(p => p.socketId === socket.id);
       if (playerIndex !== -1) {
         const removedPlayer = players.splice(playerIndex, 1)[0];
-        console.log(`User ${removedPlayer.username} left battle ${battleId}`);
+        console.log(`👋 User ${removedPlayer.username} left battle ${battleId}`);
         
         // Update remaining players
         if (players.length > 0) {

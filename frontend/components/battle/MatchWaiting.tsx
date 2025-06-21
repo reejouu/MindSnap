@@ -43,7 +43,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
   // Listen for socket events
   useEffect(() => {
     const handleOpponentJoined = (event: CustomEvent) => {
-      console.log("Opponent joined event received:", event.detail)
+      console.log("🎯 Opponent joined event received:", event.detail)
       const { username, userId } = event.detail
       
       // Create opponent player object
@@ -55,6 +55,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         wins: Math.floor(Math.random() * 50),
       }
       
+      console.log("🎯 Setting opponent joined to true and calling onOpponentJoined")
       setOpponentJoined(true)
       
       if (onOpponentJoined) {
@@ -63,17 +64,20 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     }
 
     const handleBattlePlayersUpdated = (event: CustomEvent) => {
-      console.log("Battle players updated event received:", event.detail)
+      console.log("📊 Battle players updated event received:", event.detail)
       const { players, playerCount } = event.detail
       setSocketPlayers(players)
+      
+      console.log(`📊 Current players: ${playerCount}, opponentJoined: ${opponentJoined}`)
       
       // If we have 2 players and haven't triggered opponent joined yet
       if (playerCount === 2 && !opponentJoined && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
+        console.log("🔍 Current user:", currentUser)
         const opponent = players.find(p => p.userId !== currentUser?.id)
         
         if (opponent) {
-          console.log("Found opponent in players list:", opponent)
+          console.log("🎯 Found opponent in players list:", opponent)
           const opponentPlayer: Player = {
             id: opponent.userId,
             name: opponent.username,
@@ -83,21 +87,26 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
           }
           setOpponentJoined(true)
           onOpponentJoined(opponentPlayer)
+        } else {
+          console.log("❌ No opponent found in players list")
         }
       }
     }
 
     const handleBattleReady = (event: CustomEvent) => {
-      console.log("Battle ready event received:", event.detail)
+      console.log("🚀 Battle ready event received:", event.detail)
       const { players, battleId } = event.detail
+      
+      console.log(`🚀 Battle ready - players: ${players.length}, opponentJoined: ${opponentJoined}`)
       
       // Ensure we have 2 players and haven't triggered opponent joined yet
       if (players.length === 2 && !opponentJoined && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
+        console.log("🔍 Current user in battle ready:", currentUser)
         const opponent = players.find(p => p.userId !== currentUser?.id)
         
         if (opponent) {
-          console.log("Battle ready - found opponent:", opponent)
+          console.log("🚀 Battle ready - found opponent:", opponent)
           const opponentPlayer: Player = {
             id: opponent.userId,
             name: opponent.username,
@@ -107,12 +116,14 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
           }
           setOpponentJoined(true)
           onOpponentJoined(opponentPlayer)
+        } else {
+          console.log("❌ No opponent found in battle ready")
         }
       }
     }
 
     const handleBattleStarted = (event: CustomEvent) => {
-      console.log("Battle started event received:", event.detail)
+      console.log("⚔️ Battle started event received:", event.detail)
       // This event can be used for additional synchronization if needed
     }
 
@@ -122,7 +133,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     }
 
     const handleBattleEnded = (event: CustomEvent) => {
-      console.log("Battle ended:", event.detail)
+      console.log("🏁 Battle ended:", event.detail)
     }
 
     // Add event listeners
@@ -136,16 +147,20 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     // Fetch initial battle data
     const fetchBattleData = async () => {
       try {
+        console.log("🔍 Fetching initial battle data for room:", roomId)
         const battleData = await battleService.getBattle(roomId)
         setBattle(battleData)
+        
+        console.log("📊 Initial battle data:", battleData)
         
         // If battle already has 2 players, trigger opponent joined
         if (battleData && battleData.players.length === 2 && !opponentJoined && onOpponentJoined) {
           const currentUser = battleService.getCurrentUser()
+          console.log("🔍 Current user in initial data:", currentUser)
           const opponent = battleData.players.find(p => p.userId !== currentUser?.id)
           
           if (opponent) {
-            console.log("Found opponent in initial battle data:", opponent)
+            console.log("🎯 Found opponent in initial battle data:", opponent)
             const opponentPlayer: Player = {
               id: opponent.userId,
               name: opponent.username,
@@ -155,10 +170,12 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
             }
             setOpponentJoined(true)
             onOpponentJoined(opponentPlayer)
+          } else {
+            console.log("❌ No opponent found in initial battle data")
           }
         }
       } catch (err) {
-        console.error("Error fetching battle data:", err)
+        console.error("❌ Error fetching battle data:", err)
         setError("Failed to load battle data")
       }
     }

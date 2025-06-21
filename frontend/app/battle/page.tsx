@@ -62,15 +62,19 @@ export default function BattleRoyalePage() {
   // Listen for battle ready event to synchronize all players
   useEffect(() => {
     const handleBattleReady = (event: CustomEvent) => {
-      console.log("Battle ready event received in main page:", event.detail)
+      console.log("🚀 Battle ready event received in main page:", event.detail)
       const { players, battleId } = event.detail
       
       // Find the opponent from the players list
       const currentUser = battleService.getCurrentUser()
+      console.log("🔍 Current user in main page:", currentUser)
       const foundOpponent = players.find(p => p.userId !== currentUser?.id)
+      
+      console.log(`🎯 Found opponent: ${foundOpponent ? foundOpponent.username : 'none'}, current opponent state: ${opponent ? opponent.name : 'none'}`)
       
       // Only set opponent and match-found if we don't already have an opponent
       if (foundOpponent && !opponent) {
+        console.log("🎯 Setting opponent and transitioning to match-found")
         const opponentPlayer: Player = {
           id: foundOpponent.userId,
           name: foundOpponent.username,
@@ -80,6 +84,8 @@ export default function BattleRoyalePage() {
         }
         setOpponent(opponentPlayer)
         setBattleState("match-found")
+      } else {
+        console.log("❌ Not setting opponent - already exists or no opponent found")
       }
     }
 

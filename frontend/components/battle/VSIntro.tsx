@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Swords, Trophy, Target, Zap, Crown, Star, Timer } from "lucide-react"
+import { Swords, Trophy, Target, Zap, Crown, Star, Timer, Clock } from "lucide-react"
+import { battleService } from "@/lib/battleService"
 
 interface Player {
   id: string
@@ -26,21 +27,76 @@ interface VSIntroProps {
 export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [battleStarted, setBattleStarted] = useState(false)
+  const [isRoomCreator, setIsRoomCreator] = useState(false)
+  const [waitingForCreator, setWaitingForCreator] = useState(false)
 
-  const handleStartBattle = () => {
-    setCountdown(3)
-  }
-
+  // Check if current user is the room creator (first player)
   useEffect(() => {
-    if (countdown !== null && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1)
-      }, 1000)
-      return () => clearTimeout(timer)
-    } else if (countdown === 0) {
+    const currentUser = battleService.getCurrentUser()
+    const currentBattle = battleService.getCurrentBattle()
+    
+    if (currentUser && currentBattle) {
+      // Room creator is the first player in the battle
+      const isCreator = currentBattle.players[0]?.userId === currentUser.id
+      setIsRoomCreator(isCreator)
+      setWaitingForCreator(!isCreator)
+      console.log(`🎯 User ${currentUser.name} is ${isCreator ? 'room creator' : 'joiner'}`)
+    } else {
+      console.log("❌ Could not determine room creator status")
+      // Fallback: if we can't determine, assume current user is creator
+      setIsRoomCreator(true)
+      setWaitingForCreator(false)
+    }
+  }, [])
+
+  // Listen for countdown events from socket
+  useEffect(() => {
+    const handleBattleCountdown = (event: CustomEvent) => {
+      console.log("⏰ Received countdown event:", event.detail)
+      const { countdown } = event.detail
+      setCountdown(countdown)
+      setWaitingForCreator(false)
+    }
+
+    const handleBattleStarted = (event: CustomEvent) => {
+      console.log("⚔️ Battle started event received")
       setBattleStarted(true)
     }
-  }, [countdown])
+
+    window.addEventListener("battleCountdown", handleBattleCountdown as EventListener)
+    window.addEventListener("battleStarted", handleBattleStarted as EventListener)
+
+    return () => {
+      window.removeEventListener("battleCountdown", handleBattleCountdown as EventListener)
+      window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
+    }
+  }, [])
+
+  const handleStartBattle = () => {
+    console.log("🚀 Room creator starting battle")
+    setCountdown(3)
+    
+    // Emit countdown to all players
+    battleService.emitBattleCountdown(roomId, 3)
+    
+    // Start countdown timer
+    const countdownTimer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev && prev > 1) {
+          const newCountdown = prev - 1
+          // Emit countdown update to all players
+          battleService.emitBattleCountdown(roomId, newCountdown)
+          return newCountdown
+        } else {
+          clearInterval(countdownTimer)
+          // Emit battle started event
+          battleService.emitBattleStart(roomId)
+          setBattleStarted(true)
+          return null
+        }
+      })
+    }, 1000)
+  }
 
   if (battleStarted) {
     return (
@@ -96,6 +152,40 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
         </motion.div>
 
         <p className="text-gray-400 text-lg">Battle starts in...</p>
+      </motion.div>
+    )
+  }
+
+  if (waitingForCreator) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center space-y-8"
+      >
+        <motion.div
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 5, -5, 0],
+          }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          className="w-20 h-20 mx-auto bg-gradient-to-br from-cyan-500/20 to-blue-400/20 rounded-full flex items-center justify-center mb-6"
+        >
+          <Clock className="w-10 h-10 text-cyan-400" />
+        </motion.div>
+
+        <h2 className="text-3xl font-bold text-white mb-2">Waiting for Battle Start</h2>
+        <p className="text-gray-400 text-lg">
+          Room creator will start the battle soon...
+        </p>
+        
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          className="text-cyan-400 text-lg font-semibold"
+        >
+          Get ready! ⚔️
+        </motion.div>
       </motion.div>
     )
   }
@@ -243,22 +333,40 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
         </Card>
       </motion.div>
 
-      {/* Start Battle Button */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
-        className="text-center"
-      >
-        <Button
-          onClick={handleStartBattle}
-          className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-12 py-4 text-xl rounded-2xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105"
+      {/* Start Battle Button - Only show for room creator */}
+      {isRoomCreator && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="text-center"
         >
-          <Swords className="w-6 h-6 mr-3" />
-          START BATTLE!
-        </Button>
-        <p className="text-gray-400 mt-4">Both players are ready. Let the battle begin! ⚔️</p>
-      </motion.div>
+          <Button
+            onClick={handleStartBattle}
+            className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-12 py-4 text-xl rounded-2xl shadow-2xl hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105"
+          >
+            <Swords className="w-6 h-6 mr-3" />
+            START BATTLE!
+          </Button>
+          <p className="text-gray-400 mt-4">You control the battle start. Let the battle begin! ⚔️</p>
+        </motion.div>
+      )}
+
+      {/* Waiting message for non-creators */}
+      {!isRoomCreator && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="text-center"
+        >
+          <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-2xl p-6">
+            <Clock className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
+            <p className="text-cyan-400 font-semibold text-lg">Waiting for Room Creator</p>
+            <p className="text-gray-400 mt-2">The room creator will start the battle when ready</p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Room Info */}
       <motion.div
