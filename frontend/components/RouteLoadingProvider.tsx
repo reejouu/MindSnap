@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import LoadingOverlay from "@/components/LoadingOverlay"
 
@@ -29,8 +29,12 @@ export function RouteLoadingProvider() {
   }, [])
 
   useEffect(() => {
-    setLoading(false)
-    setTimeout(() => setShow(false), 400)
+    setLoading(true)
+    let timeout = setTimeout(() => {
+      setLoading(false)
+      setShow(false)
+    }, 400)
+    return () => clearTimeout(timeout)
   }, [pathname])
 
   return <LoadingOverlay show={loading || show} />

@@ -167,7 +167,10 @@ export default function BattleRoyalePage() {
               <Swords className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+          <h1
+            className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-8 pt-2"
+            style={{ position: "relative", top: "-8px", paddingBottom: "8px" }}
+          >
             Battle Royale Quiz
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">

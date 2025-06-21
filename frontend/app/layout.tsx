@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { CivicAuthProvider } from "@civic/auth/nextjs";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { RouteLoadingProvider } from "../components/RouteLoadingProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,7 +35,12 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased bg-background text-text`}
       >
-        <Providers> <CivicAuthProvider>{children}</CivicAuthProvider></Providers>
+        <Providers>
+          <CivicAuthProvider>
+            <RouteLoadingProvider />
+            {children}
+          </CivicAuthProvider>
+        </Providers>
         <Toaster richColors position="top-right" />
       </body>
     </html>

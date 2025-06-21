@@ -352,7 +352,7 @@ export default function Leaderboard({
           </div>
           <h1
             className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4"
-            style={{ position: "relative", top: "-14px" }} // increased lift
+            style={{ position: "relative", top: "-8px", paddingBottom: "8px" }} // increased lift
           >
             Top Learners
           </h1>
@@ -656,9 +656,7 @@ export default function Leaderboard({
                     Congratulations! Your tokens have been sent to your wallet. Check your wallet to see your reward!
                   </p>
                   {rewardAmount && (
-                    <div className="text-lg font-semibold text-emerald-400">
-                      Amount Received: {rewardAmount} ETH
-                    </div>
+                    <div className="text-lg font-semibold text-emerald-400">Amount Received: {rewardAmount} ETH</div>
                   )}
                 </div>
 
