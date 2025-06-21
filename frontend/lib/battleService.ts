@@ -34,8 +34,8 @@ class BattleService {
     this.currentUser = user;
     console.log("🔌 Connecting to battle server for user:", user.name);
     
-    // Connect to the standalone Socket.IO server on port 3001
-    this.socket = io("http://localhost:3001", {
+    // Check if socket is already connected
+    this.socket = io("https://a288-203-171-240-122.ngrok-free.app", {
       transports: ["websocket", "polling"],
       autoConnect: true,
       timeout: 10000,

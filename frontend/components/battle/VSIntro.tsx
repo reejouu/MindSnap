@@ -185,7 +185,13 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
   const handleStartBattle = async () => {
     console.log("🚀 Room creator starting battle")
     setError("") // Clear any previous errors
-    
+
+    // Prevent multiple countdowns from being started
+    if (countdown !== null || battleStarted) {
+      console.warn("Countdown or battle already started, ignoring duplicate start.")
+      return
+    }
+
     // Ensure socket is connected
     const isConnected = await battleService.ensureConnection()
     if (!isConnected) {
@@ -193,63 +199,67 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
       setError("Socket connection failed. Please try again.")
       return
     }
-    
+
     // Double-check we are the room creator
     const currentUser = battleService.getCurrentUser()
     const currentBattle = battleService.getCurrentBattle()
-    
+
     if (!currentUser || !currentBattle) {
       console.error("❌ Missing user or battle data")
       setError("Missing user or battle data. Please refresh the page.")
       return
     }
-    
+
     const isCreator = currentBattle.players[0]?.userId === currentUser.id
     if (!isCreator) {
       console.error("❌ User is not the room creator")
       setError("You are not the room creator. Only the room creator can start the battle.")
       return
     }
-    
+
     console.log("✅ Confirmed room creator, starting countdown...")
     setCountdown(3)
-    
+
     try {
       // Emit countdown to all players
       battleService.emitBattleCountdown(roomId, 3)
-      
-      // Start countdown timer
+
+      // Use a ref to ensure only one countdown interval is running
+      let countdownRunning = true
+
       const countdownTimer = setInterval(() => {
         setCountdown((prev) => {
+          if (!countdownRunning) return prev
           if (prev && prev > 1) {
             const newCountdown = prev - 1
             console.log(`⏰ Countdown: ${newCountdown}`)
             battleService.emitBattleCountdown(roomId, newCountdown)
             return newCountdown
           } else {
+            countdownRunning = false
             clearInterval(countdownTimer)
             console.log("⚔️ Countdown finished, generating quiz...")
-            
+
             // Generate quiz
             fetch("/api/generate-battle-quiz", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ topic }),
             })
-            .then(res => {
-              if (!res.ok) throw new Error("Failed to generate quiz")
-              return res.json()
-            })
-            .then(quiz => {
-              console.log("✅ Quiz generated, starting battle...")
-              battleService.emitBattleStart(roomId, quiz)
-              setBattleStarted(true)
-            })
-            .catch(error => {
-              console.error("❌ Error generating quiz:", error)
-              setError("Failed to generate quiz. Please try again.")
-            })
-            
+              .then(res => {
+                if (!res.ok) throw new Error("Failed to generate quiz")
+                return res.json()
+              })
+              .then(quiz => {
+                console.log("✅ Quiz generated, starting battle...")
+                battleService.emitBattleStart(roomId, quiz)
+                setBattleStarted(true)
+              })
+              .catch(error => {
+                console.error("❌ Error generating quiz:", error)
+                setError("Failed to generate quiz. Please try again.")
+              })
+
             return null
           }
         })
@@ -579,74 +589,83 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
             )}
           </motion.div>
         )}
-        
-        {/* Debug Info */}
-        <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-          <p className="text-xs text-gray-400 mb-2">Debug Info:</p>
-          <div className="text-xs space-y-1">
-            <p>Room Creator: {isRoomCreator ? 'Yes' : 'No'}</p>
-            <p>Waiting for Creator: {waitingForCreator ? 'Yes' : 'No'}</p>
-            <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
-            <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
-            <p>Socket Connected: {battleService.isConnected() ? 'Yes' : 'No'}</p>
-            <p>Battle Ready Triggered: {battleReadyTriggeredRef.current ? 'Yes' : 'No'}</p>
-          </div>
-          
-          {/* Manual trigger button for testing */}
-          <div className="mt-3 pt-3 border-t border-gray-700/30 space-y-2">
-            <Button
-              onClick={() => {
-                const currentBattle = battleService.getCurrentBattle()
-                if (currentBattle && currentBattle.players.length === 2) {
-                  window.dispatchEvent(new CustomEvent("battleReady", { 
-                    detail: { 
-                      players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
-                      battleId: currentBattle._id
-                    }
-                  }))
-                }
-              }}
-              className="w-full text-xs py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
-            >
-              🔧 Manual Trigger Battle Ready
-            </Button>
-            <Button
-              onClick={handleForceRefresh}
-              className="w-full text-xs py-1 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
-            >
-              🔄 Force Refresh Battle Data
-            </Button>
-            <Button
-              onClick={() => {
-                const currentBattle = battleService.getCurrentBattle()
-                if (currentBattle && currentBattle.players.length === 2) {
-                  console.log("🔧 Manual trigger: Dispatching battle ready event")
-                  window.dispatchEvent(new CustomEvent("battleReady", { 
-                    detail: { 
-                      players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
-                      battleId: currentBattle._id
-                    }
-                  }))
-                }
-              }}
-              className="w-full text-xs py-1 bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30"
-            >
-              🚀 Manual Trigger Battle Ready Event
-            </Button>
-            
-            <Button
-              onClick={async () => {
-                console.log("🔧 Manual trigger: Checking and fixing socket connection")
-                const success = await battleService.ensureConnection()
-                console.log("🔧 Socket check result:", success)
-              }}
-              className="w-full text-xs py-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
-            >
-              🔧 Check & Fix Socket Connection
-            </Button>
-          </div>
-        </div>
       </motion.div>
+
+      {/* Debug Info - Only show in development */}
+      {process.env.NODE_ENV === "development" && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="text-center text-sm text-gray-500"
+        >
+          <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
+            <p className="text-xs text-gray-400 mb-2">Debug Info:</p>
+            <div className="text-xs space-y-1">
+              <p>Room Creator: {isRoomCreator ? 'Yes' : 'No'}</p>
+              <p>Waiting for Creator: {waitingForCreator ? 'Yes' : 'No'}</p>
+              <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
+              <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
+              <p>Socket Connected: {battleService.isConnected() ? 'Yes' : 'No'}</p>
+              <p>Battle Ready Triggered: {battleReadyTriggeredRef.current ? 'Yes' : 'No'}</p>
+            </div>
+            
+            {/* Manual trigger button for testing */}
+            <div className="mt-3 pt-3 border-t border-gray-700/30 space-y-2">
+              <Button
+                onClick={() => {
+                  const currentBattle = battleService.getCurrentBattle()
+                  if (currentBattle && currentBattle.players.length === 2) {
+                    window.dispatchEvent(new CustomEvent("battleReady", { 
+                      detail: { 
+                        players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
+                        battleId: currentBattle._id
+                      }
+                    }))
+                  }
+                }}
+                className="w-full text-xs py-1 bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
+              >
+                🔧 Manual Trigger Battle Ready
+              </Button>
+              <Button
+                onClick={handleForceRefresh}
+                className="w-full text-xs py-1 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
+              >
+                🔄 Force Refresh Battle Data
+              </Button>
+              <Button
+                onClick={() => {
+                  const currentBattle = battleService.getCurrentBattle()
+                  if (currentBattle && currentBattle.players.length === 2) {
+                    console.log("🔧 Manual trigger: Dispatching battle ready event")
+                    window.dispatchEvent(new CustomEvent("battleReady", { 
+                      detail: { 
+                        players: currentBattle.players.map(p => ({ userId: p.userId, username: p.username })),
+                        battleId: currentBattle._id
+                      }
+                    }))
+                  }
+                }}
+                className="w-full text-xs py-1 bg-purple-500/20 text-purple-400 border-purple-500/30 hover:bg-purple-500/30"
+              >
+                🚀 Manual Trigger Battle Ready Event
+              </Button>
+              
+              <Button
+                onClick={async () => {
+                  console.log("🔧 Manual trigger: Checking and fixing socket connection")
+                  const success = await battleService.ensureConnection()
+                  console.log("🔧 Socket check result:", success)
+                }}
+                className="w-full text-xs py-1 bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30"
+              >
+                🔧 Check & Fix Socket Connection
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   )
 }

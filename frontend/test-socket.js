@@ -1,7 +1,7 @@
 const io = require('socket.io-client');
 
 // Test socket connection
-const socket = io('http://localhost:3001');
+const socket = io('https://a288-203-171-240-122.ngrok-free.app');
 
 socket.on('connect', () => {
   console.log('✅ Connected to socket server');
