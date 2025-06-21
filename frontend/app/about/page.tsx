@@ -157,20 +157,19 @@ export default function AboutPage() {
       <div className="container mx-auto px-6 py-8 max-w-7xl">
         {/* Hero Section */}
         <motion.div
-          className="text-center mb-20"
+          className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           
           <h1 className="text-6xl md:text-7xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
-              About
+            <div className="bg-gradient-to-r from-white via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
+              About{" "}<span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                MindSnap
             </span>
-            <br />
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              MindSnap
-            </span>
+            </div>
+            
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
             We're on a mission to make learning as addictive as your favorite social media platform.
@@ -192,9 +191,8 @@ export default function AboutPage() {
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Why We Built
+                Why We Built{" "}
               </span>
-              <br />
               <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 MindSnap
               </span>
@@ -246,9 +244,8 @@ export default function AboutPage() {
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Why Students Love
+                Why Students Love{" "}
               </span>
-              <br />
               <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
                 MindSnap
               </span>
