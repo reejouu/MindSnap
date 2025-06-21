@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
   const [error, setError] = useState<string>("")
   const [socketPlayers, setSocketPlayers] = useState<BattlePlayer[]>([])
   const [opponentJoined, setOpponentJoined] = useState(false)
+  const opponentJoinedRef = useRef(false)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -40,11 +41,55 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     return () => clearInterval(timer)
   }, [])
 
+  // Periodic socket connection check
+  useEffect(() => {
+    const checkSocketConnection = () => {
+      if (!battleService.isConnected()) {
+        console.log("⚠️ Socket connection lost, attempting to reconnect...")
+        const currentUser = battleService.getCurrentUser()
+        if (currentUser) {
+          battleService.connect(currentUser).then(() => {
+            console.log("✅ Socket reconnected")
+          })
+        }
+      }
+    }
+
+    // Check every 5 seconds
+    const interval = setInterval(checkSocketConnection, 5000)
+    
+    return () => clearInterval(interval)
+  }, [roomId])
+
+  // Ensure socket is connected and joined to room on component mount
+  useEffect(() => {
+    const ensureSocketConnection = async () => {
+      console.log("🔧 Ensuring socket connection for room:", roomId)
+      
+      // Check if socket is connected
+      if (!battleService.isConnected()) {
+        console.log("🔧 Socket not connected, connecting...")
+        const currentUser = battleService.getCurrentUser()
+        if (currentUser) {
+          await battleService.connect(currentUser)
+        }
+      }
+    }
+
+    ensureSocketConnection()
+  }, [roomId])
+
   // Listen for socket events
   useEffect(() => {
     const handleOpponentJoined = (event: CustomEvent) => {
       console.log("🎯 Opponent joined event received:", event.detail)
       const { username, userId } = event.detail
+      
+      // Prevent duplicate triggers
+      if (opponentJoinedRef.current) {
+        console.log("🎯 Opponent already joined, ignoring duplicate event")
+        return
+      }
       
       // Create opponent player object
       const opponentPlayer: Player = {
@@ -56,6 +101,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       }
       
       console.log("🎯 Setting opponent joined to true and calling onOpponentJoined")
+      opponentJoinedRef.current = true
       setOpponentJoined(true)
       
       if (onOpponentJoined) {
@@ -68,10 +114,10 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       const { players, playerCount } = event.detail
       setSocketPlayers(players)
       
-      console.log(`📊 Current players: ${playerCount}, opponentJoined: ${opponentJoined}`)
+      console.log(`📊 Current players: ${playerCount}, opponentJoined: ${opponentJoinedRef.current}`)
       
       // If we have 2 players and haven't triggered opponent joined yet
-      if (playerCount === 2 && !opponentJoined && onOpponentJoined) {
+      if (playerCount === 2 && !opponentJoinedRef.current && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
         console.log("🔍 Current user:", currentUser)
         const opponent = players.find(p => p.userId !== currentUser?.id)
@@ -85,6 +131,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
             rank: Math.floor(Math.random() * 1000) + 500,
             wins: Math.floor(Math.random() * 50),
           }
+          opponentJoinedRef.current = true
           setOpponentJoined(true)
           onOpponentJoined(opponentPlayer)
         } else {
@@ -97,10 +144,10 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       console.log("🚀 Battle ready event received:", event.detail)
       const { players, battleId } = event.detail
       
-      console.log(`🚀 Battle ready - players: ${players.length}, opponentJoined: ${opponentJoined}`)
+      console.log(`🚀 Battle ready - players: ${players.length}, opponentJoined: ${opponentJoinedRef.current}`)
       
       // Ensure we have 2 players and haven't triggered opponent joined yet
-      if (players.length === 2 && !opponentJoined && onOpponentJoined) {
+      if (players.length === 2 && !opponentJoinedRef.current && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
         console.log("🔍 Current user in battle ready:", currentUser)
         const opponent = players.find(p => p.userId !== currentUser?.id)
@@ -114,6 +161,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
             rank: Math.floor(Math.random() * 1000) + 500,
             wins: Math.floor(Math.random() * 50),
           }
+          opponentJoinedRef.current = true
           setOpponentJoined(true)
           onOpponentJoined(opponentPlayer)
         } else {
@@ -154,7 +202,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         console.log("📊 Initial battle data:", battleData)
         
         // If battle already has 2 players, trigger opponent joined
-        if (battleData && battleData.players.length === 2 && !opponentJoined && onOpponentJoined) {
+        if (battleData && battleData.players.length === 2 && !opponentJoinedRef.current && onOpponentJoined) {
           const currentUser = battleService.getCurrentUser()
           console.log("🔍 Current user in initial data:", currentUser)
           const opponent = battleData.players.find(p => p.userId !== currentUser?.id)
@@ -168,6 +216,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
               rank: Math.floor(Math.random() * 1000) + 500,
               wins: Math.floor(Math.random() * 50),
             }
+            opponentJoinedRef.current = true
             setOpponentJoined(true)
             onOpponentJoined(opponentPlayer)
           } else {
@@ -182,6 +231,36 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
 
     fetchBattleData()
 
+    // Set up periodic battle data check as backup for socket events
+    const battleDataInterval = setInterval(async () => {
+      if (!opponentJoinedRef.current) {
+        try {
+          const battleData = await battleService.getBattle(roomId)
+          if (battleData && battleData.players.length === 2 && !opponentJoinedRef.current && onOpponentJoined) {
+            console.log("🔄 Backup: Found 2 players in battle data, triggering opponent joined")
+            const currentUser = battleService.getCurrentUser()
+            const opponent = battleData.players.find(p => p.userId !== currentUser?.id)
+            
+            if (opponent) {
+              console.log("🔄 Backup: Triggering opponent joined for:", opponent.username)
+              const opponentPlayer: Player = {
+                id: opponent.userId,
+                name: opponent.username,
+                avatar: "🧠",
+                rank: Math.floor(Math.random() * 1000) + 500,
+                wins: Math.floor(Math.random() * 50),
+              }
+              opponentJoinedRef.current = true
+              setOpponentJoined(true)
+              onOpponentJoined(opponentPlayer)
+            }
+          }
+        } catch (err) {
+          console.error("❌ Error in backup battle data check:", err)
+        }
+      }
+    }, 3000) // Check every 3 seconds
+
     return () => {
       window.removeEventListener("opponentJoined", handleOpponentJoined as EventListener)
       window.removeEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
@@ -189,8 +268,9 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
       window.removeEventListener("battleUpdated", handleBattleUpdated as EventListener)
       window.removeEventListener("battleEnded", handleBattleEnded as EventListener)
+      clearInterval(battleDataInterval)
     }
-  }, [roomId, onOpponentJoined, opponentJoined])
+  }, [roomId, onOpponentJoined])
 
   const handleCopyRoomId = async () => {
     try {

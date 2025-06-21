@@ -135,14 +135,30 @@ class BattleService {
       this.currentBattle = battle;
       console.log("✅ Battle created:", battle._id);
 
-      // Join socket room
-      if (this.socket) {
+      // Ensure socket is connected before joining room
+      if (!this.socket?.connected) {
+        console.log("⚠️ Socket not connected, attempting to reconnect...");
+        await this.ensureConnection();
+      }
+
+      // Join socket room with retry mechanism
+      if (this.socket?.connected) {
         console.log("🔗 Emitting join_battle for creator:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
           battleId: battle._id, 
           username: user.name,
           userId: user.id 
         });
+        
+        // Verify room join by checking socket rooms after a short delay
+        setTimeout(() => {
+          console.log("🔍 Verifying room join for creator...");
+          this.socket?.emit("join_battle", { 
+            battleId: battle._id, 
+            username: user.name,
+            userId: user.id 
+          });
+        }, 1000);
       } else {
         console.log("❌ Socket not connected for battle creation");
       }
@@ -175,14 +191,30 @@ class BattleService {
       this.currentBattle = battle;
       console.log("✅ Battle joined:", battle._id);
 
-      // Join socket room
-      if (this.socket) {
+      // Ensure socket is connected before joining room
+      if (!this.socket?.connected) {
+        console.log("⚠️ Socket not connected, attempting to reconnect...");
+        await this.ensureConnection();
+      }
+
+      // Join socket room with retry mechanism
+      if (this.socket?.connected) {
         console.log("🔗 Emitting join_battle for joiner:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
           battleId: battle._id, 
           username: user.name,
           userId: user.id 
         });
+        
+        // Verify room join by checking socket rooms after a short delay
+        setTimeout(() => {
+          console.log("🔍 Verifying room join for joiner...");
+          this.socket?.emit("join_battle", { 
+            battleId: battle._id, 
+            username: user.name,
+            userId: user.id 
+          });
+        }, 1000);
       } else {
         console.log("❌ Socket not connected for battle joining");
       }
@@ -284,18 +316,6 @@ class BattleService {
     }
   }
 
-  // Manually trigger battle ready event (for testing)
-  triggerBattleReady(battleId: string) {
-    if (this.socket) {
-      console.log("🔧 Manually triggering battle ready for:", battleId);
-      this.socket.emit("join_battle", { 
-        battleId, 
-        username: this.currentUser?.name || "Unknown",
-        userId: this.currentUser?.id || "unknown"
-      });
-    }
-  }
-
   // Check if socket is connected
   isConnected(): boolean {
     return this.socket?.connected || false;
@@ -334,6 +354,27 @@ class BattleService {
   // Set current battle (for external updates)
   setCurrentBattle(battle: Battle) {
     this.currentBattle = battle;
+  }
+
+  // Manually refresh battle data and update current battle
+  async refreshBattleData(battleId: string): Promise<Battle | null> {
+    try {
+      console.log("🔄 Manually refreshing battle data for:", battleId);
+      const updatedBattle = await this.getBattle(battleId);
+      if (updatedBattle) {
+        this.currentBattle = updatedBattle;
+        console.log("🔄 Updated current battle:", updatedBattle);
+        
+        // Emit battle updated event
+        window.dispatchEvent(new CustomEvent("battleUpdated", { detail: updatedBattle }));
+        
+        return updatedBattle;
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ Error refreshing battle data:", error);
+      return null;
+    }
   }
 
   // Disconnect socket

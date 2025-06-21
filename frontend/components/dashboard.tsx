@@ -35,6 +35,7 @@ import {
   Mic,
   MicOff,
   Sparkles,
+  Highlighter,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -913,23 +914,42 @@ export default function Dashboard({
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </div>
-                                <Button
-                                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                                  onClick={handleGenerateCardsFromPdf}
-                                  disabled={loading}
-                                >
-                                  {loading && loadingType === "pdf" ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      Generating Cards...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Zap className="w-4 h-4 mr-2" />
-                                      Generate Cards
-                                    </>
-                                  )}
-                                </Button>
+                                <div className="space-y-3">
+                                  <Button
+                                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                                    onClick={handleGenerateCardsFromPdf}
+                                    disabled={loading}
+                                  >
+                                    {loading && loadingType === "pdf" ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Generating Cards...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Zap className="w-4 h-4 mr-2" />
+                                        Generate Cards
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                                    onClick={handleGenerateCardsFromPdf}
+                                    disabled={loading}
+                                  >
+                                    {loading && loadingType === "pdf" ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Generating...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Highlighter className="w-4 h-4 mr-2" />
+                                        Highlight & Generate
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
                               </div>
                             )}
 
