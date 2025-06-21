@@ -101,50 +101,50 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: "Sayan Adhikary",
-      role: "Team Lead & Web3 Developer",
-      avatar: "🧠",
+      name: "Sayan Adhikary (Team Lead)",
+      role: "Fullstack & Blockchain Developer",
+      avatar: "/sayan.jpg",
       skills: ["Web3", "Product Strategy", "Leadership"],
       social: {
-        linkedin: "#",
-        twitter: "#",
-        github: "#",
+        linkedin: "https://www.linkedin.com/in/sayanadk/",
+        twitter: "https://x.com/reejouu",
+        github: "https://github.com/reejouu",
       },
       color: "from-emerald-500 to-cyan-500",
     },
     {
       name: "Devayanee Gupta",
-      role: "AI Whisperer",
-      avatar: "⚡",
+      role: "Backend Developer",
+      avatar: "/devayanee.jpg",
       skills: ["AI Integration", "System Design"],
       social: {
-        linkedin: "#",
-        twitter: "#",
-        github: "#",
+        linkedin: "https://www.linkedin.com/in/dg2805/",
+        twitter: "https://x.com/d_gupta_05",
+        github: "https://github.com/dg-2805",
       },
       color: "from-cyan-500 to-blue-500",
     },
     {
       name: "Sanchayan Khan",
-      role: "Full Stack Developer",
-      avatar: "🎨",
-      skills: ["UX/UI Design", "User Research", "Prototyping"],
+      role: "Frontend Developer",
+      avatar: "/sanchayan.jpg",
+      skills: ["UX/UI Design",  "Prototyping"],
       social: {
-        linkedin: "#",
-        twitter: "#",
-        github: "#",
+        linkedin: "https://www.linkedin.com/in/sanchayan-khan/",
+        twitter: "https://x.com/sanchayan_kn",
+        github: "https://github.com/snch404",
       },
       color: "from-blue-500 to-purple-500",
     },
     {
       name: "Kaniska Mitra",
       role: "Frontend Developer",
-      avatar: "📚",
-      skills: ["UI/UX", "Research", "Curriculum"],
+      avatar: "/kaniska.jpg",
+      skills: ["UI/UX", "Research"],
       social: {
-        linkedin: "#",
-        twitter: "#",
-        github: "#",
+        linkedin: "https://www.linkedin.com/in/kaniskamitra/",
+        twitter: "https://x.com/JustKaniskaTbh",
+        github: "https://github.com/Kaniska1",
       },
       color: "from-purple-500 to-pink-500",
     },
@@ -349,20 +349,20 @@ export default function AboutPage() {
                   <CardContent className="p-8 text-center space-y-6">
                     <div className="relative">
                       <div
-                        className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${member.color} flex items-center justify-center text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                        className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${member.color} flex items-center justify-center text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}
                       >
-                        {member.avatar}
+                        <img src={member.avatar} alt={member.name} className="w-full h-full object-cover rounded-full" />
                       </div>
-                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-5 h-5 text-white" />
-                      </div>
+                      
                     </div>
 
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">
+                      <h3 className="text-xl font-bold text-white mb-1">
                         {member.name}
                       </h3>
-                      <p className="text-purple-400 font-medium mb-3">{member.role}</p>
+                      <p className="font-medium mb-3 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                        {member.role}
+                      </p>
                     </div>
 
                     <div className="space-y-4">
@@ -380,18 +380,24 @@ export default function AboutPage() {
                       <div className="flex justify-center space-x-4">
                         <a
                           href={member.social.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="w-8 h-8 bg-gray-700/50 hover:bg-blue-500/20 rounded-full flex items-center justify-center transition-colors group/social"
                         >
                           <Linkedin className="w-4 h-4 text-gray-400 group-hover/social:text-blue-400" />
                         </a>
                         <a
                           href={member.social.twitter}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="w-8 h-8 bg-gray-700/50 hover:bg-cyan-500/20 rounded-full flex items-center justify-center transition-colors group/social"
                         >
                           <Twitter className="w-4 h-4 text-gray-400 group-hover/social:text-cyan-400" />
                         </a>
                         <a
                           href={member.social.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="w-8 h-8 bg-gray-700/50 hover:bg-emerald-500/20 rounded-full flex items-center justify-center transition-colors group/social"
                         >
                           <Github className="w-4 h-4 text-gray-400 group-hover/social:text-emerald-400" />

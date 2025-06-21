@@ -23,6 +23,8 @@ import {
 import { useRouter } from "next/navigation"
 import { Modal } from "@/components/ui/modal"
 import { useAccount } from "wagmi"
+import Particles from "@/components/particles"
+import { Renderer, Camera } from "ogl"
 
 interface FlashcardData {
   id: string
@@ -213,99 +215,116 @@ export default function FlashcardSystem({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0f0a] text-white flex flex-col">
-      {/* Header */}
-      <div className="border-b border-emerald-500/20 bg-[#0a0f0a]/95 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={onExit || (() => router.push("/dashboard"))}
-                className="text-gray-300 hover:text-white hover:bg-emerald-500/10 transition-all duration-200"
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-lg font-semibold text-white">{topic}</h1>
-                <Badge
-                  className={`${mode === "learning" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"} transition-all duration-300`}
-                >
-                  {mode === "learning" ? "Learning Mode" : "Quiz Mode"}
-                </Badge>
-              </div>
-            </div>
-            <div className="text-sm text-gray-400 font-medium">
-              {currentCardIndex + 1} of {cards.length}
-            </div>
-          </div>
-          <div className="mt-4">
-            <Progress value={progress} className="h-2 bg-gray-800/50" />
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0a0f0a] text-white flex flex-col relative overflow-hidden">
+      {/* Particle Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Particles
+          particleColors={["#34d399", "#34d399"]}
+          particleCount={200}
+          particleSpread={10}
+          speed={0.1}
+          particleBaseSize={100}
+          moveParticlesOnHover={true}
+          alphaParticles={false}
+          disableRotation={false}
+        />
       </div>
 
-      {/* Flashcard */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl">
-          <Card
-            className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 hover:border-emerald-500/30 min-h-[400px] cursor-grab active:cursor-grabbing transition-all duration-300 shadow-2xl backdrop-blur-sm"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
-            <CardContent className="p-8 h-full flex flex-col justify-center">
-              {mode === "learning" ? (
-                <LearningCard card={currentCard} />
-              ) : (
-                <QuizCard
-                  card={currentCard}
-                  selectedAnswer={selectedAnswer}
-                  showResult={showResult}
-                  onAnswerSelect={handleAnswerSelect}
-                />
-              )}
-            </CardContent>
-          </Card>
+      {/* Flashcard Content */}
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="border-b border-emerald-500/20 bg-[#0a0f0a]/95 backdrop-blur-sm sticky top-0 z-40">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  onClick={onExit || (() => router.push("/dashboard"))}
+                  className="text-gray-300 hover:text-white hover:bg-emerald-500/10 transition-all duration-200"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <div>
+                  <h1 className="text-lg font-semibold text-white">{topic}</h1>
+                  <Badge
+                    className={`${mode === "learning" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"} transition-all duration-300`}
+                  >
+                    {mode === "learning" ? "Learning Mode" : "Quiz Mode"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="text-sm text-gray-400 font-medium">
+                {currentCardIndex + 1} of {cards.length}
+              </div>
+            </div>
+            <div className="mt-4">
+              <Progress value={progress} className="h-2 bg-gray-800/50" />
+            </div>
+          </div>
+        </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-6">
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentCardIndex === 0}
-              className="border-gray-600/50 text-gray-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        {/* Flashcard */}
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-2xl">
+            <Card
+              className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 border-gray-700/50 hover:border-emerald-500/30 min-h-[400px] cursor-grab active:cursor-grabbing transition-all duration-300 shadow-2xl backdrop-blur-sm"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
             >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Previous
-            </Button>
+              <CardContent className="p-8 h-full flex flex-col justify-center">
+                {mode === "learning" ? (
+                  <LearningCard card={currentCard} />
+                ) : (
+                  <QuizCard
+                    card={currentCard}
+                    selectedAnswer={selectedAnswer}
+                    showResult={showResult}
+                    onAnswerSelect={handleAnswerSelect}
+                  />
+                )}
+              </CardContent>
+            </Card>
 
-            <div className="flex items-center space-x-2">
-              {cards.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentCardIndex
-                      ? "bg-emerald-400 scale-125 shadow-lg shadow-emerald-400/50"
-                      : "bg-gray-600/50 hover:bg-gray-500/70"
-                  }`}
-                />
-              ))}
+            {/* Navigation */}
+            <div className="flex items-center justify-between mt-6">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentCardIndex === 0}
+                className="border-gray-600/50 text-gray-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Previous
+              </Button>
+
+              <div className="flex items-center space-x-2">
+                {cards.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentCardIndex
+                        ? "bg-emerald-400 scale-125 shadow-lg shadow-emerald-400/50"
+                        : "bg-gray-600/50 hover:bg-gray-500/70"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <Button
+                onClick={handleNext}
+                disabled={mode === "quiz" && selectedAnswer === null}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isLastCard ? "Complete" : "Next"}
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
 
-            <Button
-              onClick={handleNext}
-              disabled={mode === "quiz" && selectedAnswer === null}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-              {isLastCard ? "Complete" : "Next"}
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
+            {/* Swipe Hint */}
+            <div className="text-center mt-4 text-gray-500 text-sm">Swipe left or right to navigate</div>
           </div>
-
-          {/* Swipe Hint */}
-          <div className="text-center mt-4 text-gray-500 text-sm">Swipe left or right to navigate</div>
         </div>
       </div>
     </div>
