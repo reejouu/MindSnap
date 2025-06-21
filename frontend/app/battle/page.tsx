@@ -93,10 +93,25 @@ export default function BattleRoyalePage() {
       }
     }
 
+    // Listen for battle started event to receive quiz data
+    const handleBattleStarted = (event: CustomEvent) => {
+      console.log("⚔️ Battle started event received in main page:", event.detail)
+      const { quiz } = event.detail
+      if (quiz) {
+        console.log("📝 Quiz received in main page, transitioning to battle-quiz")
+        setQuiz(quiz)
+        setBattleState("battle-quiz")
+      } else {
+        console.error("❌ No quiz data received in battle started event")
+      }
+    }
+
     window.addEventListener("battleReady", handleBattleReady as EventListener)
+    window.addEventListener("battleStarted", handleBattleStarted as EventListener)
 
     return () => {
       window.removeEventListener("battleReady", handleBattleReady as EventListener)
+      window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
     }
   }, [opponent])
 

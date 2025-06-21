@@ -240,7 +240,6 @@ export function VSIntro({ player1, player2, topic, roomId, onBattleStart }: VSIn
               console.log("✅ Quiz generated, starting battle...")
               battleService.emitBattleStart(roomId, quiz)
               setBattleStarted(true)
-              onBattleStart(quiz)
             })
             .catch(error => {
               console.error("❌ Error generating quiz:", error)
