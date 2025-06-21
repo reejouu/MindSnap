@@ -26,8 +26,11 @@ class BattleService {
   // Initialize socket connection
   connect(user: User) {
     this.currentUser = user;
+    
+    // Connect to socket server without specifying path since it's handled by the route
     this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3000", {
-      path: "/api/socket_io",
+      transports: ["websocket", "polling"],
+      autoConnect: true,
     });
 
     this.setupSocketListeners();
@@ -43,6 +46,10 @@ class BattleService {
 
     this.socket.on("disconnect", () => {
       console.log("Disconnected from battle server");
+    });
+
+    this.socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
     });
 
     this.socket.on("opponent_joined", (data: { username: string }) => {
