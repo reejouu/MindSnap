@@ -87,6 +87,35 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       }
     }
 
+    const handleBattleReady = (event: CustomEvent) => {
+      console.log("Battle ready event received:", event.detail)
+      const { players, battleId } = event.detail
+      
+      // Ensure we have 2 players and haven't triggered opponent joined yet
+      if (players.length === 2 && !opponentJoined && onOpponentJoined) {
+        const currentUser = battleService.getCurrentUser()
+        const opponent = players.find(p => p.userId !== currentUser?.id)
+        
+        if (opponent) {
+          console.log("Battle ready - found opponent:", opponent)
+          const opponentPlayer: Player = {
+            id: opponent.userId,
+            name: opponent.username,
+            avatar: "🧠",
+            rank: Math.floor(Math.random() * 1000) + 500,
+            wins: Math.floor(Math.random() * 50),
+          }
+          setOpponentJoined(true)
+          onOpponentJoined(opponentPlayer)
+        }
+      }
+    }
+
+    const handleBattleStarted = (event: CustomEvent) => {
+      console.log("Battle started event received:", event.detail)
+      // This event can be used for additional synchronization if needed
+    }
+
     const handleBattleUpdated = (event: CustomEvent) => {
       const updatedBattle = event.detail as Battle
       setBattle(updatedBattle)
@@ -99,6 +128,8 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     // Add event listeners
     window.addEventListener("opponentJoined", handleOpponentJoined as EventListener)
     window.addEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
+    window.addEventListener("battleReady", handleBattleReady as EventListener)
+    window.addEventListener("battleStarted", handleBattleStarted as EventListener)
     window.addEventListener("battleUpdated", handleBattleUpdated as EventListener)
     window.addEventListener("battleEnded", handleBattleEnded as EventListener)
 
@@ -137,6 +168,8 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     return () => {
       window.removeEventListener("opponentJoined", handleOpponentJoined as EventListener)
       window.removeEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
+      window.removeEventListener("battleReady", handleBattleReady as EventListener)
+      window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
       window.removeEventListener("battleUpdated", handleBattleUpdated as EventListener)
       window.removeEventListener("battleEnded", handleBattleEnded as EventListener)
     }

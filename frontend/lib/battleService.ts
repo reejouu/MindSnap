@@ -69,6 +69,16 @@ class BattleService {
       window.dispatchEvent(new CustomEvent("battlePlayersUpdated", { detail: data }));
     });
 
+    this.socket.on("battle_ready", (data: { players: BattlePlayer[]; battleId: string }) => {
+      console.log("Battle ready with 2 players:", data.players);
+      window.dispatchEvent(new CustomEvent("battleReady", { detail: data }));
+    });
+
+    this.socket.on("battle_started", (data: { battleId: string }) => {
+      console.log("Battle started:", data.battleId);
+      window.dispatchEvent(new CustomEvent("battleStarted", { detail: data }));
+    });
+
     this.socket.on("battle_updated", (battle: Battle) => {
       this.currentBattle = battle;
       window.dispatchEvent(new CustomEvent("battleUpdated", { detail: battle }));
@@ -214,6 +224,13 @@ class BattleService {
   emitBattleEnd(battleId: string, winner: string) {
     if (this.socket) {
       this.socket.emit("end_battle", { battleId, winner });
+    }
+  }
+
+  // Emit battle start event to synchronize all players
+  emitBattleStart(battleId: string) {
+    if (this.socket) {
+      this.socket.emit("battle_start", { battleId });
     }
   }
 

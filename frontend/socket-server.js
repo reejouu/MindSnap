@@ -47,6 +47,21 @@ io.on("connection", (socket) => {
     });
     
     console.log(`Battle ${battleId} now has ${battlePlayers.length} players:`, battlePlayers.map(p => p.username));
+    
+    // If we have exactly 2 players, trigger battle start for all players
+    if (battlePlayers.length === 2) {
+      console.log(`Battle ${battleId} is ready to start with 2 players!`);
+      io.to(battleId).emit("battle_ready", {
+        players: battlePlayers,
+        battleId: battleId
+      });
+    }
+  });
+
+  socket.on("battle_start", (data) => {
+    const { battleId } = data;
+    console.log(`Battle ${battleId} starting for all players`);
+    io.to(battleId).emit("battle_started", { battleId });
   });
 
   socket.on("question_answered", (data) => {

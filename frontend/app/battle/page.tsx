@@ -59,6 +59,37 @@ export default function BattleRoyalePage() {
     setBattleState("match-found")
   }
 
+  // Listen for battle ready event to synchronize all players
+  useEffect(() => {
+    const handleBattleReady = (event: CustomEvent) => {
+      console.log("Battle ready event received in main page:", event.detail)
+      const { players, battleId } = event.detail
+      
+      // Find the opponent from the players list
+      const currentUser = battleService.getCurrentUser()
+      const foundOpponent = players.find(p => p.userId !== currentUser?.id)
+      
+      // Only set opponent and match-found if we don't already have an opponent
+      if (foundOpponent && !opponent) {
+        const opponentPlayer: Player = {
+          id: foundOpponent.userId,
+          name: foundOpponent.username,
+          avatar: "🧠",
+          rank: Math.floor(Math.random() * 1000) + 500,
+          wins: Math.floor(Math.random() * 50),
+        }
+        setOpponent(opponentPlayer)
+        setBattleState("match-found")
+      }
+    }
+
+    window.addEventListener("battleReady", handleBattleReady as EventListener)
+
+    return () => {
+      window.removeEventListener("battleReady", handleBattleReady as EventListener)
+    }
+  }, [opponent])
+
   // Auto transition to VS intro after match found
   useEffect(() => {
     if (battleState === "match-found") {
