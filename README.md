@@ -2,6 +2,7 @@
 
 MindSnap is a next-generation, community-powered learning platform that gamifies education and rewards top performers. By integrating interactive quizzes, dynamic leaderboards, and blockchain-based incentives, MindSnap creates an engaging environment where users are motivated to learn, compete, and grow together.
 
+![alt text](images/image.png)
 ---
 
 ## Features
