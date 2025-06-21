@@ -55,6 +55,7 @@ export default function BattleRoyalePage() {
 
   // Handle opponent joining
   const handleOpponentJoined = (newOpponent: Player) => {
+    console.log("🎯 Main page - Opponent joined:", newOpponent)
     setOpponent(newOpponent)
     setBattleState("match-found")
   }
@@ -197,6 +198,15 @@ export default function BattleRoyalePage() {
 
         {/* Main Content */}
         <AnimatePresence mode="wait">
+          {/* Debug Info */}
+          <div className="mb-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 text-xs">
+            <p className="text-gray-400 mb-2">Debug - Battle State: {battleState}</p>
+            <p>Opponent: {opponent ? opponent.name : 'None'}</p>
+            <p>Room ID: {roomId || 'None'}</p>
+            <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
+            <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
+          </div>
+
           {battleState === "topic-selection" && (
             <motion.div
               key="topic-selection"

@@ -35,40 +35,91 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
     const currentUser = battleService.getCurrentUser()
     const currentBattle = battleService.getCurrentBattle()
     
+    console.log("🔍 VSIntro - Current user:", currentUser)
+    console.log("🔍 VSIntro - Current battle:", currentBattle)
+    
     if (currentUser && currentBattle) {
       // Room creator is the first player in the battle
       const isCreator = currentBattle.players[0]?.userId === currentUser.id
       setIsRoomCreator(isCreator)
       setWaitingForCreator(!isCreator)
       console.log(`🎯 User ${currentUser.name} is ${isCreator ? 'room creator' : 'joiner'}`)
+      console.log(`🎯 Battle players:`, currentBattle.players)
     } else {
       console.log("❌ Could not determine room creator status")
+      console.log("❌ Current user:", currentUser)
+      console.log("❌ Current battle:", currentBattle)
       // Fallback: if we can't determine, assume current user is creator
       setIsRoomCreator(true)
       setWaitingForCreator(false)
     }
   }, [])
 
+  // Refresh battle data periodically to ensure we have latest player info
+  useEffect(() => {
+    const refreshBattleData = async () => {
+      try {
+        console.log("🔄 VSIntro - Refreshing battle data for room:", roomId)
+        const updatedBattle = await battleService.getBattle(roomId)
+        if (updatedBattle) {
+          console.log("🔄 VSIntro - Updated battle data:", updatedBattle)
+          const currentUser = battleService.getCurrentUser()
+          if (currentUser && updatedBattle.players.length >= 2) {
+            const isCreator = updatedBattle.players[0]?.userId === currentUser.id
+            setIsRoomCreator(isCreator)
+            setWaitingForCreator(!isCreator)
+            console.log(`🔄 VSIntro - Updated: User ${currentUser.name} is ${isCreator ? 'room creator' : 'joiner'}`)
+          }
+        }
+      } catch (error) {
+        console.error("❌ VSIntro - Error refreshing battle data:", error)
+      }
+    }
+
+    // Refresh immediately and then every 2 seconds
+    refreshBattleData()
+    const interval = setInterval(refreshBattleData, 2000)
+
+    return () => clearInterval(interval)
+  }, [roomId])
+
   // Listen for countdown events from socket
   useEffect(() => {
     const handleBattleCountdown = (event: CustomEvent) => {
-      console.log("⏰ Received countdown event:", event.detail)
+      console.log("⏰ VSIntro - Received countdown event:", event.detail)
       const { countdown } = event.detail
       setCountdown(countdown)
       setWaitingForCreator(false)
     }
 
     const handleBattleStarted = (event: CustomEvent) => {
-      console.log("⚔️ Battle started event received")
+      console.log("⚔️ VSIntro - Battle started event received:", event.detail)
       setBattleStarted(true)
+    }
+
+    const handleBattlePlayersUpdated = (event: CustomEvent) => {
+      console.log("📊 VSIntro - Battle players updated:", event.detail)
+      // Update battle data if needed
+      const currentBattle = battleService.getCurrentBattle()
+      if (currentBattle) {
+        console.log("📊 VSIntro - Current battle players:", currentBattle.players)
+      }
+    }
+
+    const handleBattleReady = (event: CustomEvent) => {
+      console.log("🚀 VSIntro - Battle ready event received:", event.detail)
     }
 
     window.addEventListener("battleCountdown", handleBattleCountdown as EventListener)
     window.addEventListener("battleStarted", handleBattleStarted as EventListener)
+    window.addEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
+    window.addEventListener("battleReady", handleBattleReady as EventListener)
 
     return () => {
       window.removeEventListener("battleCountdown", handleBattleCountdown as EventListener)
       window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
+      window.removeEventListener("battlePlayersUpdated", handleBattlePlayersUpdated as EventListener)
+      window.removeEventListener("battleReady", handleBattleReady as EventListener)
     }
   }, [])
 
@@ -376,6 +427,17 @@ export function VSIntro({ player1, player2, topic, roomId }: VSIntroProps) {
         className="text-center text-sm text-gray-500"
       >
         Room ID: <code className="bg-gray-800/50 px-2 py-1 rounded">{roomId}</code>
+        
+        {/* Debug Info */}
+        <div className="mt-4 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
+          <p className="text-xs text-gray-400 mb-2">Debug Info:</p>
+          <div className="text-xs space-y-1">
+            <p>Room Creator: {isRoomCreator ? 'Yes' : 'No'}</p>
+            <p>Waiting for Creator: {waitingForCreator ? 'Yes' : 'No'}</p>
+            <p>Current User: {battleService.getCurrentUser()?.name || 'Unknown'}</p>
+            <p>Battle Players: {battleService.getCurrentBattle()?.players?.length || 0}</p>
+          </div>
+        </div>
       </motion.div>
     </div>
   )
