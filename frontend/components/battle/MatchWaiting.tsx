@@ -120,7 +120,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       if (playerCount === 2 && !opponentJoinedRef.current && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
         console.log("🔍 Current user:", currentUser)
-        const opponent = players.find(p => p.userId !== currentUser?.id)
+        const opponent = players.find((p: BattlePlayer) => p.userId !== currentUser?.id)
         
         if (opponent) {
           console.log("🎯 Found opponent in players list:", opponent)
@@ -150,7 +150,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
       if (players.length === 2 && !opponentJoinedRef.current && onOpponentJoined) {
         const currentUser = battleService.getCurrentUser()
         console.log("🔍 Current user in battle ready:", currentUser)
-        const opponent = players.find(p => p.userId !== currentUser?.id)
+        const opponent = players.find((p: BattlePlayer) => p.userId !== currentUser?.id)
         
         if (opponent) {
           console.log("🚀 Battle ready - found opponent:", opponent)
@@ -205,7 +205,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
         if (battleData && battleData.players.length === 2 && !opponentJoinedRef.current && onOpponentJoined) {
           const currentUser = battleService.getCurrentUser()
           console.log("🔍 Current user in initial data:", currentUser)
-          const opponent = battleData.players.find(p => p.userId !== currentUser?.id)
+          const opponent = battleData.players.find((p) => p.userId !== currentUser?.id)
           
           if (opponent) {
             console.log("🎯 Found opponent in initial battle data:", opponent)
@@ -239,7 +239,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
           if (battleData && battleData.players.length === 2 && !opponentJoinedRef.current && onOpponentJoined) {
             console.log("🔄 Backup: Found 2 players in battle data, triggering opponent joined")
             const currentUser = battleService.getCurrentUser()
-            const opponent = battleData.players.find(p => p.userId !== currentUser?.id)
+            const opponent = battleData.players.find((p) => p.userId !== currentUser?.id)
             
             if (opponent) {
               console.log("🔄 Backup: Triggering opponent joined for:", opponent.username)
@@ -411,7 +411,7 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
               {currentPlayers.length > 1 ? (
                 // Show actual opponent
                 currentPlayers
-                  .filter(p => p.userId !== currentUser?.id)
+                  .filter((p) => p.userId !== currentUser?.id)
                   .map((opponent, index) => (
                     <motion.div
                       key={opponent.userId}

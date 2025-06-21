@@ -35,6 +35,87 @@ interface WaitingForResultsProps {
   onManualCheck?: () => void
 }
 
+// WaitingForResults component definition
+const WaitingForResults: React.FC<WaitingForResultsProps> = ({
+  currentPlayerScore,
+  playerCount,
+  onManualCheck
+}) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="text-center space-y-8"
+    >
+      <motion.div
+        animate={{
+          scale: [1, 1.1, 1],
+          rotate: [0, 5, -5, 0],
+        }}
+        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+        className="w-24 h-24 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-400/20 rounded-full flex items-center justify-center mb-6"
+      >
+        <Trophy className="w-12 h-12 text-green-400" />
+      </motion.div>
+
+      <div className="space-y-4">
+        <h2 className="text-3xl font-bold text-white mb-2">Quiz Completed!</h2>
+        <p className="text-gray-400 text-lg">
+          Great job! Here's your performance:
+        </p>
+      </div>
+
+      <Card className="bg-gray-800/50 border-gray-700 max-w-md mx-auto">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white mb-2">
+                {currentPlayerScore.score}/{currentPlayerScore.totalQuestions}
+              </div>
+              <div className="text-gray-400">Questions Correct</div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="text-center">
+                <div className="text-xl font-semibold text-blue-400">
+                  {currentPlayerScore.accuracy}%
+                </div>
+                <div className="text-gray-400">Accuracy</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-semibold text-purple-400">
+                  {Math.floor(currentPlayerScore.timeSpent / 60)}:{(currentPlayerScore.timeSpent % 60).toString().padStart(2, '0')}
+                </div>
+                <div className="text-gray-400">Time Taken</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+          className="text-yellow-400 text-lg font-semibold"
+        >
+          Waiting for opponent to finish... ({playerCount}/2 completed)
+        </motion.div>
+        
+        {onManualCheck && (
+          <Button
+            onClick={onManualCheck}
+            variant="outline"
+            className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
+          >
+            Check Results Now
+          </Button>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 export function BattleQuizIntegration({ 
   roomId, 
   topic, 
@@ -60,7 +141,7 @@ export function BattleQuizIntegration({
     if (!topic || !timeLimit) return
 
     // Listen for battle start event
-    const handleBattleStarted = async (event: CustomEvent) => {
+    const handleBattleStarted = async (event: Event) => {
       console.log("⚔️ Battle started, generating quiz...")
       
       // Prevent duplicate quiz generation
@@ -105,10 +186,10 @@ export function BattleQuizIntegration({
       }
     }
 
-    window.addEventListener("battleStarted", handleBattleStarted as EventListener)
+    window.addEventListener("battleStarted", handleBattleStarted)
 
     return () => {
-      window.removeEventListener("battleStarted", handleBattleStarted as EventListener)
+      window.removeEventListener("battleStarted", handleBattleStarted)
     }
   }, [topic, timeLimit])
 
@@ -456,4 +537,4 @@ export function BattleQuizIntegration({
   }
 
   return null
-} 
+}
