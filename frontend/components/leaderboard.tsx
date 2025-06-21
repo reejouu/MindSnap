@@ -52,17 +52,9 @@ export default function Leaderboard({
   const [error, setError] = useState<string | null>(null)
   const [showRewardPopup, setShowRewardPopup] = useState(false)
   const [hasClaimed, setHasClaimed] = useState(false)
+  const [rewardAmount, setRewardAmount] = useState<number | null>(null)
 
   const { data: hash, writeContract, isPending } = useWriteContract()
-
-  function handleClaimReward() {
-    writeContract({
-      address: RewardDispenserAddress,
-      abi: RewardDispenserABI,
-      functionName: "claimReward",
-      account: address,
-    })
-  }
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -99,6 +91,15 @@ export default function Leaderboard({
   const testPopup = () => {
     console.log("Testing popup manually")
     setShowRewardPopup(true)
+  }
+
+  function handleClaimReward() {
+    writeContract({
+      address: RewardDispenserAddress,
+      abi: RewardDispenserABI,
+      functionName: "claimReward",
+      account: address,
+    })
   }
 
   useEffect(() => {
@@ -654,6 +655,11 @@ export default function Leaderboard({
                   <p className="text-gray-300">
                     Congratulations! Your tokens have been sent to your wallet. Check your wallet to see your reward!
                   </p>
+                  {rewardAmount && (
+                    <div className="text-lg font-semibold text-emerald-400">
+                      Amount Received: {rewardAmount} ETH
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-emerald-500/10 rounded-lg p-4 border border-emerald-500/20">

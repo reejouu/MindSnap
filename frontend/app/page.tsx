@@ -23,6 +23,7 @@ import {
   Lightbulb,
   Rocket,
 } from "lucide-react"
+import { User } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Navbar from "@/components/navbar"
 import { TypewriterEffect } from "@/components/ui/typewriter-effect"
@@ -105,7 +106,7 @@ export default function MindSnapLanding() {
       content:
         "MindSnap transformed how I study. I went from struggling with textbooks to acing my exams with 40% less study time.",
       rating: 5,
-      avatar: "/placeholder.svg?height=40&width=40",
+      avatar: null, // Use null to indicate no image
     },
     {
       name: "Marcus Rodriguez",
@@ -113,7 +114,7 @@ export default function MindSnapLanding() {
       content:
         "The AI-generated cards are incredibly smart. It's like having a personal tutor that knows exactly what I need to learn.",
       rating: 5,
-      avatar: "/placeholder.svg?height=40&width=40",
+      avatar: null,
     },
     {
       name: "Emily Watson",
@@ -121,7 +122,7 @@ export default function MindSnapLanding() {
       content:
         "The gamification aspect keeps me motivated. I actually look forward to studying now - it's become addictive!",
       rating: 5,
-      avatar: "/placeholder.svg?height=40&width=40",
+      avatar: null,
     },
   ]
 
@@ -135,10 +136,10 @@ export default function MindSnapLanding() {
           <div className="text-center space-y-8">
             {/* Hero Badge */}
             <div
-              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-purple-400/10 border border-purple-400/20 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
             >
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm text-emerald-400 font-medium">AI-Powered Learning Revolution</span>
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span className="text-sm text-purple-400 font-medium">AI-Powered Learning Revolution</span>
             </div>
 
             {/* Main Headline */}
@@ -405,11 +406,17 @@ export default function MindSnapLanding() {
                 </div>
                 <p className="text-gray-300 mb-6 leading-relaxed">"{testimonial.content}"</p>
                 <div className="flex items-center">
-                  <img
-                    src={testimonial.avatar || "/placeholder.svg"}
-                    alt={testimonial.name}
-                    className="w-12 h-12 rounded-full mr-4"
-                  />
+                  {testimonial.avatar ? (
+                    <img
+                      src={testimonial.avatar}
+                      alt={testimonial.name}
+                      className="w-12 h-12 rounded-full mr-4"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full mr-4 bg-gray-800 flex items-center justify-center">
+                      <User className="w-7 h-7 text-gray-400" />
+                    </div>
+                  )}
                   <div>
                     <div className="font-semibold text-white">{testimonial.name}</div>
                     <div className="text-gray-400 text-sm">{testimonial.role}</div>

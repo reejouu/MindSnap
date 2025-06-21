@@ -52,4 +52,4 @@ export const RewardDispenserABI = [
       }  
       ];
   
-  export const RewardDispenserAddress = "0x4599b4e9f305dDce97708EAC7a2751cFaca70F4a";
+  export const RewardDispenserAddress = "0x0275e553e47c4f11074bdFe4651164b98906c0F4";
