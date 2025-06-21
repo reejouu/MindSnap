@@ -1,10 +1,33 @@
 {
-  "name": "hardhat-project",
+  "name": "@mindsnap/web3",
+  "version": "1.0.0",
+  "description": "MindSnap Web3 - Smart contracts and blockchain integration",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "node": "hardhat node",
+    "clean": "hardhat clean",
+    "build": "hardhat compile",
+    "verify": "hardhat verify"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.24.3"
   },
   "dependencies": {
     "dotenv": "^16.5.0"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "smart-contracts",
+    "hardhat",
+    "web3"
+  ]
 }

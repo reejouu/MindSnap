@@ -1,0 +1,38 @@
+{
+  "name": "@mindsnap/agent",
+  "version": "1.0.0",
+  "description": "MindSnap AI Agent - Python backend for quiz generation and flashcard creation",
+  "private": true,
+  "main": "main.py",
+  "scripts": {
+    "start": "python main.py",
+    "dev": "python main.py",
+    "install-deps": "pip install -r requirements.txt",
+    "test": "python -m pytest tests/",
+    "lint": "flake8 .",
+    "format": "black .",
+    "build": "echo 'Python package - no build step required'",
+    "clean": "find . -type f -name '*.pyc' -delete && find . -type d -name '__pycache__' -delete"
+  },
+  "dependencies": {
+    "python-shell": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.8.0"
+  },
+  "files": [
+    "*.py",
+    "requirements.txt"
+  ],
+  "keywords": [
+    "ai",
+    "python",
+    "quiz",
+    "flashcards",
+    "machine-learning"
+  ]
+} 
