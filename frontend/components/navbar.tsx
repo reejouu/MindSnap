@@ -20,7 +20,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const tabRoutes = [
-    { tab: "Features", path: "#features" },
+    { tab: "Features", path: "/#features" },
     { tab: "Dashboard", path: "/dashboard" },
     { tab: "Leaderboard", path: "/leaderboard" },
     { tab: "QuizBattle", path: "/battle" },
