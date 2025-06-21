@@ -251,7 +251,7 @@ export default function MindSnapLanding() {
       </HeroHighlight>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-gradient-to-b from-[#0a0f0a] to-[#0f1410]">
+      <section id="features" className="py-4 bg-gradient-to-b from-[#0a0f0a] to-[#0f1410]">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-20 scroll-animate">
             <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
@@ -473,14 +473,15 @@ export default function MindSnapLanding() {
                 effective.
               </p>
               <div className="flex space-x-4">
-                {[Twitter, Github, Linkedin].map((Icon, index) => (
-                  <div
-                    key={index}
-                    className="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-emerald-500/20 flex items-center justify-center cursor-pointer transition-colors group"
-                  >
-                    <Icon className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
-                  </div>
-                ))}
+                <a
+                  href="https://github.com/reejouu/MindSnap"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-gray-800/50 hover:bg-emerald-500/20 flex items-center justify-center cursor-pointer transition-colors group"
+                  aria-label="GitHub"
+                >
+                  <Github className="w-5 h-5 text-gray-400 group-hover:text-emerald-400" />
+                </a>
               </div>
             </div>
 
