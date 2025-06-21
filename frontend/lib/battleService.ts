@@ -27,8 +27,8 @@ class BattleService {
   connect(user: User) {
     this.currentUser = user;
     
-    // Connect to socket server without specifying path since it's handled by the route
-    this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3000", {
+    // Connect to the standalone Socket.IO server on port 3001
+    this.socket = io("http://localhost:3001", {
       transports: ["websocket", "polling"],
       autoConnect: true,
     });

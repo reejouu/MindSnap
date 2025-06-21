@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:socket": "node socket-server.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:socket\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -39,6 +41,7 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.0.0",
+    "concurrently": "^8.2.2",
     "eslint": "^8.0.0",
     "eslint-config-next": "15.0.0",
     "pino-pretty": "^13.0.0",
