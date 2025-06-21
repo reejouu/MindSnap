@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Target, Users, Clock, AlertCircle, Loader2 } from "lucide-react"
+import { battleService, User } from "@/lib/battleService"
 
 interface JoinRoomProps {
   topic: string
@@ -20,7 +21,7 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState("")
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!roomId.trim()) {
       setError("Please enter a room code")
       return
@@ -34,10 +35,32 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
     setError("")
     setIsJoining(true)
 
-    // Simulate room validation
-    setTimeout(() => {
-      onRoomJoined(roomId.toUpperCase())
-    }, 1500)
+    try {
+      // Create a mock user for now - in a real app, this would come from auth
+      const user: User = {
+        id: `user_${Date.now()}`,
+        name: `Player_${Math.floor(Math.random() * 1000)}`,
+      }
+
+      // Connect to socket service
+      battleService.connect(user)
+
+      // First check if battle exists
+      const existingBattle = await battleService.getBattle(roomId)
+      if (!existingBattle) {
+        throw new Error("Room not found or no longer available")
+      }
+
+      // Join the battle
+      const battle = await battleService.joinBattle(roomId, user)
+      
+      // Notify parent component
+      onRoomJoined(battle._id)
+    } catch (err) {
+      console.error("Error joining room:", err)
+      setError(err instanceof Error ? err.message : "Failed to join room. Please try again.")
+      setIsJoining(false)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,12 +104,12 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
             <div className="space-y-2">
               <Input
                 type="text"
-                placeholder="Enter 6-digit room code..."
+                placeholder="Enter room code..."
                 value={roomId}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 className="bg-gradient-to-r from-gray-800/80 to-cyan-500/5 border-gray-600/50 text-white text-center text-xl font-bold tracking-wider h-14 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20"
-                maxLength={8}
+                maxLength={24}
                 disabled={isJoining}
               />
               {error && (
@@ -149,7 +172,7 @@ export function JoinRoom({ topic, onRoomJoined }: JoinRoomProps) {
         className="text-center space-y-2"
       >
         <p className="text-sm text-gray-400">
-          🎯 <strong>Quick Tip:</strong> Room codes are case-insensitive and 6-8 characters long
+          🎯 <strong>Quick Tip:</strong> Room codes are case-insensitive and can be up to 24 characters long
         </p>
         <p className="text-xs text-gray-500">Make sure you and your opponent selected the same topic!</p>
       </motion.div>

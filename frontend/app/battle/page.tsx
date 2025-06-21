@@ -13,6 +13,7 @@ import Navbar from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Swords, Trophy, Users, Zap, Target, Crown, ArrowLeft } from "lucide-react"
+import { battleService, User } from "@/lib/battleService"
 
 type BattleState =
   | "topic-selection"
@@ -45,22 +46,18 @@ export default function BattleRoyalePage() {
   })
   const [opponent, setOpponent] = useState<Player | null>(null)
 
-  // Simulate finding an opponent after waiting
+  // Cleanup on unmount
   useEffect(() => {
-    if (battleState === "waiting") {
-      const timer = setTimeout(() => {
-        setOpponent({
-          id: "player2",
-          name: "QuizMaster_42",
-          avatar: "🧠",
-          rank: 892,
-          wins: 31,
-        })
-        setBattleState("match-found")
-      }, 3000)
-      return () => clearTimeout(timer)
+    return () => {
+      battleService.disconnect()
     }
-  }, [battleState])
+  }, [])
+
+  // Handle opponent joining
+  const handleOpponentJoined = (newOpponent: Player) => {
+    setOpponent(newOpponent)
+    setBattleState("match-found")
+  }
 
   // Auto transition to VS intro after match found
   useEffect(() => {
@@ -101,12 +98,14 @@ export default function BattleRoyalePage() {
         setBattleState("mode-selection")
         setRoomId("")
         setOpponent(null)
+        battleService.disconnect()
         break
       case "vs-intro":
         setBattleState("topic-selection")
         setSelectedTopic("")
         setRoomId("")
         setOpponent(null)
+        battleService.disconnect()
         break
       default:
         setBattleState("topic-selection")
@@ -221,7 +220,12 @@ export default function BattleRoyalePage() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
             >
-              <MatchWaiting roomId={roomId} topic={selectedTopic} player={currentPlayer} />
+              <MatchWaiting 
+                roomId={roomId} 
+                topic={selectedTopic} 
+                player={currentPlayer}
+                onOpponentJoined={handleOpponentJoined}
+              />
             </motion.div>
           )}
 

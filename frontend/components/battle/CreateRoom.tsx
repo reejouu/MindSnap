@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { generateRoomId } from "@/lib/utils"
-import { Copy, Share2, Users, Clock, Crown, Sparkles, CheckCircle } from "lucide-react"
+import { Copy, Share2, Users, Clock, Crown, Sparkles, CheckCircle, AlertCircle } from "lucide-react"
+import { battleService, User } from "@/lib/battleService"
 
 interface CreateRoomProps {
   topic: string
@@ -17,6 +18,7 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
   const [roomId, setRoomId] = useState<string>("")
   const [copied, setCopied] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState<string>("")
 
   useEffect(() => {
     // Generate room ID when component mounts
@@ -34,11 +36,34 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
     }
   }
 
-  const handleCreateRoom = () => {
+  const handleCreateRoom = async () => {
     setIsCreating(true)
-    setTimeout(() => {
-      onRoomCreated(roomId)
-    }, 1000)
+    setError("")
+
+    try {
+      // Create a mock user for now - in a real app, this would come from auth
+      const user: User = {
+        id: `user_${Date.now()}`,
+        name: `Player_${Math.floor(Math.random() * 1000)}`,
+      }
+
+      // Connect to socket service
+      battleService.connect(user)
+
+      // Create battle in database
+      const battle = await battleService.createBattle(topic, user)
+      
+      // Use the actual battle ID from database
+      const actualRoomId = battle._id
+      setRoomId(actualRoomId)
+
+      // Notify parent component
+      onRoomCreated(actualRoomId)
+    } catch (err) {
+      console.error("Error creating room:", err)
+      setError("Failed to create room. Please try again.")
+      setIsCreating(false)
+    }
   }
 
   const handleShare = async () => {
@@ -80,6 +105,18 @@ export function CreateRoom({ topic, onRoomCreated }: CreateRoomProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Error Display */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center space-x-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
+            >
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <span className="text-red-400 text-sm">{error}</span>
+            </motion.div>
+          )}
+
           {/* Room ID Display */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-gray-300">Room Code</label>
