@@ -1,18 +1,41 @@
+# Core AI and Language Processing
 langchain>=0.1.17
 langchain-google-genai>=0.0.11
 google-generativeai>=0.4.0
-python-dotenv>=1.0.0
-yt_dlp>=2024.4.9
-PyPDF2>=3.0.1
-pydub>=0.25.1
 openai-whisper @ git+https://github.com/openai/whisper.git
-ffmpeg-python>=0.2.0
-pytesseract>=0.3.10
-Pillow>=9.0.0
-PyMuPDF>=1.23.0
-nltk>=3.8.1
-numpy>=1.26.0
-pdf2image>=1.16.3
+faster-whisper>=0.10.0
 transformers>=4.38.0
 sentence-transformers>=2.5.0
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+
+# Web and API
+youtube-transcript-api>=0.6.1
+yt_dlp>=2024.4.9
+
+# PDF Processing
+PyPDF2>=3.0.1
+PyMuPDF>=1.23.0
+pdf2image>=1.16.3
+
+# Image Processing
+Pillow>=9.0.0
+pytesseract>=0.3.10
+
+# Audio Processing
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
+
+# Natural Language Processing
+nltk>=3.8.1
+
+# Data Science and Machine Learning
+numpy>=1.26.0
 scikit-learn>=1.4.0
+
+# Web Framework (for Flask routes)
+Flask>=3.0.0
+
+# Additional utilities
+torch>=2.0.0

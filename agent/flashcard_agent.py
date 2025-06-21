@@ -20,6 +20,7 @@ GENRE_INSTRUCTIONS = {
 - Each card should deliver a standalone fact or data point.""",
     "conceptual": """Write 4-6 flashcards that explain scientific, technical, or theoretical concepts in depth.
 - Focus on principles, mechanisms, relationships, and "how/why" explanations.
+-Do NOT use bold text or headings (using "**Concept:**" or "**Explanation:**" is not allowed).
 - Use analogies or diagrams if helpful.
 - Cards should help the learner understand the underlying ideas, not just memorize facts.""",
     "genz": """Write 4-6 flashcards in a Gen-Z style:
@@ -77,11 +78,12 @@ Transcript:
 {transcript}
 
 ---
-Return your output in the following JSON format:
+Return your output in the following JSON format. For each flashcard, you must provide a "title" that is a 2-3 word catchy phrase summarizing the card's content, and the "content" of the flashcard.
 {{
   "flashcards": [
     {{
       "id": 1,
+      "title": "A Catchy Title",
       "content": "..."
     }},
     ...

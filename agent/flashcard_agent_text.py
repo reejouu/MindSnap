@@ -18,6 +18,7 @@ GENRE_INSTRUCTIONS = {
 - Each card should deliver a standalone fact or data point.""",
     "conceptual": """Write 4-6 flashcards that explain scientific, technical, or theoretical concepts in depth.
 - Focus on principles, mechanisms, relationships, and "how/why" explanations.
+-Do NOT use bold text or headings (using "**Concept:**" or "**Explanation:**" is not allowed).
 - Use analogies or diagrams if helpful.
 - Cards should help the learner understand the underlying ideas, not just memorize facts.""",
     "genz": """Write 4-6 flashcards in a Gen-Z style:
@@ -36,6 +37,23 @@ def get_genre_prompt(genre):
     if genre not in GENRE_INSTRUCTIONS:
         raise ValueError(f"Unknown genre: '{genre}'. Must be one of: {', '.join(GENRE_INSTRUCTIONS.keys())}")
     return GENRE_INSTRUCTIONS[genre]
+
+def filter_conceptual_flashcards(flashcards):
+    filtered = []
+    for card in flashcards:
+        content = card["content"]
+
+        # Remove "**Concept:**" and "**Explanation:**" labels using regex
+        content = re.sub(r"\*\*Concept:\*\*\s*", "", content)
+        content = re.sub(r"\*\*Explanation:\*\*\s*", "", content)
+
+        # Optional: You can also join everything into one trimmed paragraph
+        lines = [line.strip() for line in content.split('\n') if line.strip()]
+        cleaned_content = " ".join(lines)
+
+        filtered.append({"id": card["id"], "content": cleaned_content})
+    return filtered
+
 
 def generate_flashcards_from_text(transcript: str, genre: str) -> dict:
     """Generate flashcards from text using Gemini, with genre support."""
@@ -57,11 +75,12 @@ Input Text:
 {transcript}
 
 ---
-Return your output in the following JSON format:
+Return your output in the following JSON format. For each flashcard, you must provide a "title" that is a 2-3 word catchy phrase summarizing the card's content, and the "content" of the flashcard.
 {{
   "flashcards": [
     {{
       "id": 1,
+      "title": "A Catchy Title",
       "content": "..."
     }},
     ...
@@ -78,6 +97,8 @@ Return your output in the following JSON format:
         flashcards_data = json.loads(response_text)
         if not isinstance(flashcards_data, dict) or 'flashcards' not in flashcards_data:
             raise ValueError("Invalid response format")
+        if genre == "conceptual":
+            flashcards_data["flashcards"] = filter_conceptual_flashcards(flashcards_data["flashcards"])
         print(f"Successfully generated {len(flashcards_data['flashcards'])} flashcards", file=sys.stderr)
         return flashcards_data
     except json.JSONDecodeError:
