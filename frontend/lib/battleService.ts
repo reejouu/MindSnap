@@ -135,8 +135,14 @@ class BattleService {
       this.currentBattle = battle;
       console.log("✅ Battle created:", battle._id);
 
+      // Ensure socket is connected before joining room
+      if (!this.socket?.connected) {
+        console.log("⚠️ Socket not connected, attempting to reconnect...");
+        await this.ensureConnection();
+      }
+
       // Join socket room
-      if (this.socket) {
+      if (this.socket?.connected) {
         console.log("🔗 Emitting join_battle for creator:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
           battleId: battle._id, 
@@ -175,8 +181,14 @@ class BattleService {
       this.currentBattle = battle;
       console.log("✅ Battle joined:", battle._id);
 
+      // Ensure socket is connected before joining room
+      if (!this.socket?.connected) {
+        console.log("⚠️ Socket not connected, attempting to reconnect...");
+        await this.ensureConnection();
+      }
+
       // Join socket room
-      if (this.socket) {
+      if (this.socket?.connected) {
         console.log("🔗 Emitting join_battle for joiner:", user.name, "battle:", battle._id);
         this.socket.emit("join_battle", { 
           battleId: battle._id, 
@@ -293,6 +305,20 @@ class BattleService {
         username: this.currentUser?.name || "Unknown",
         userId: this.currentUser?.id || "unknown"
       });
+    }
+  }
+
+  // Manually rejoin socket room (for debugging)
+  rejoinSocketRoom(battleId: string) {
+    if (this.socket?.connected && this.currentUser) {
+      console.log("🔧 Manually rejoining socket room for:", battleId);
+      this.socket.emit("join_battle", { 
+        battleId, 
+        username: this.currentUser.name,
+        userId: this.currentUser.id
+      });
+    } else {
+      console.log("❌ Cannot rejoin socket room - socket not connected or no current user");
     }
   }
 

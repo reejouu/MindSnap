@@ -18,8 +18,10 @@ io.on("connection", (socket) => {
   socket.on("join_battle", async (data) => {
     const { battleId, username, userId } = data;
     console.log(`🔗 User ${username} (${userId}) attempting to join battle ${battleId}`);
+    console.log(`🔗 Socket ID: ${socket.id}, Socket connected: ${socket.connected}`);
     
     socket.join(battleId);
+    console.log(`🔗 Socket ${socket.id} joined room ${battleId}`);
     
     // Store player info
     if (!activeBattles.has(battleId)) {
@@ -42,6 +44,8 @@ io.on("connection", (socket) => {
     
     // Always emit updated player list to ALL players in the room (including the joiner)
     console.log(`📊 Emitting battle_players_updated to all players in ${battleId}:`, battlePlayers.map(p => p.username));
+    console.log(`📊 Room ${battleId} has ${socket.adapter.rooms.get(battleId)?.size || 0} sockets`);
+    
     io.to(battleId).emit("battle_players_updated", {
       players: battlePlayers,
       playerCount: battlePlayers.length

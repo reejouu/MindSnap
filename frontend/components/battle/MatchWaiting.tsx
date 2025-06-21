@@ -41,6 +41,28 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
     return () => clearInterval(timer)
   }, [])
 
+  // Periodic socket connection check
+  useEffect(() => {
+    const checkSocketConnection = () => {
+      if (!battleService.isConnected()) {
+        console.log("⚠️ Socket connection lost, attempting to reconnect...")
+        const currentUser = battleService.getCurrentUser()
+        if (currentUser) {
+          battleService.connect(currentUser).then(() => {
+            console.log("✅ Socket reconnected")
+            // Rejoin the room after reconnection
+            battleService.rejoinSocketRoom(roomId)
+          })
+        }
+      }
+    }
+
+    // Check every 5 seconds
+    const interval = setInterval(checkSocketConnection, 5000)
+    
+    return () => clearInterval(interval)
+  }, [roomId])
+
   // Listen for socket events
   useEffect(() => {
     const handleOpponentJoined = (event: CustomEvent) => {
@@ -470,6 +492,16 @@ export function MatchWaiting({ roomId, topic, player, onOpponentJoined }: MatchW
             className="w-full text-xs py-1 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30"
           >
             🚀 Trigger Battle Ready
+          </Button>
+          
+          <Button
+            onClick={() => {
+              console.log("🔧 Manual trigger: Rejoining socket room")
+              battleService.rejoinSocketRoom(roomId)
+            }}
+            className="w-full text-xs py-1 bg-orange-500/20 text-orange-400 border-orange-500/30 hover:bg-orange-500/30"
+          >
+            🔗 Rejoin Socket Room
           </Button>
           
           <Button
