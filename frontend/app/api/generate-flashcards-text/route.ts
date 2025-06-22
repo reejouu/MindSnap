@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { spawn } from "child_process"
-import path from "path"
+import { getApiUrl, API_ENDPOINTS } from '../../../lib/config'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -10,82 +9,59 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "No text provided" }, { status: 400 })
     }
 
-    const normalizedGenre = genre ? genre.toLowerCase().trim() : null
-    const scriptPath = path.join(process.cwd(), "..", "agent", "flashcard_agent_text.py")
-    console.log("Python script path:", scriptPath)
+    const normalizedGenre = genre ? genre.toLowerCase().trim() : 'factual'
     console.log("Text length:", text.length)
     console.log("Genre:", normalizedGenre)
 
-    return new Promise<NextResponse>((resolve) => {
-      let outputData = ""
-      let errorData = ""
+    // Make request to hosted Render API
+    const apiUrl = getApiUrl(API_ENDPOINTS.FLASHCARDS_TEXT)
+    console.log("Making request to:", apiUrl)
 
-      const pythonProcess = spawn("python", [scriptPath])
-      pythonProcess.stdin.write(JSON.stringify({ text, genre: normalizedGenre }) + "\n")
-      pythonProcess.stdin.end()
-
-      pythonProcess.stdout.on("data", (data) => {
-        const chunk = data.toString()
-        console.log("Python stdout chunk:", chunk)
-        outputData += chunk
-      })
-
-      pythonProcess.stderr.on("data", (data) => {
-        const chunk = data.toString()
-        console.error("Python stderr chunk:", chunk)
-        errorData += chunk
-      })
-
-      pythonProcess.on("close", (code) => {
-        console.log("Python process exited with code:", code)
-        console.log("Final output data:", outputData)
-        console.log("Final error data:", errorData)
-
-        if (code !== 0) {
-          console.error("Python script error:", errorData)
-          resolve(
-            NextResponse.json(
-              { error: "Failed to generate flashcards", details: errorData },
-              { status: 500 }
-            )
-          )
-          return
-        }
-
-        try {
-          const cleanOutput = outputData.trim()
-          const response = JSON.parse(cleanOutput)
-
-          if (response.error) {
-            resolve(
-              NextResponse.json(
-                { error: response.error, details: response.details },
-                { status: 500 }
-              )
-            )
-            return
-          }
-
-          if (!response.flashcards || !Array.isArray(response.flashcards)) {
-            throw new Error("Invalid flashcard data structure")
-          }
-
-          resolve(NextResponse.json(response))
-        } catch (error) {
-          console.error("Failed to parse Python output:", outputData)
-          resolve(
-            NextResponse.json(
-              { error: "Invalid response from flashcard generator", details: outputData },
-              { status: 500 }
-            )
-          )
-        }
-      })
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        genre: normalizedGenre
+      }),
     })
+
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error("API request failed:", response.status, errorData)
+      return NextResponse.json(
+        { 
+          error: "Failed to generate flashcards from hosted API",
+          details: `HTTP ${response.status}: ${errorData}`
+        },
+        { status: response.status }
+      )
+    }
+
+    const data = await response.json()
+    console.log("API response received:", data)
+
+    if (data.error) {
+      return NextResponse.json(
+        { error: data.error, details: data.details },
+        { status: 500 }
+      )
+    }
+
+    if (!data.flashcards || !Array.isArray(data.flashcards)) {
+      throw new Error("Invalid flashcard data structure from API")
+    }
+
+    return NextResponse.json(data)
   } catch (error) {
     console.error("API route error:", error)
     return NextResponse.json(
-      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: "Internal server error", 
+        details: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }
