@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { spawn } from "child_process"
+import { getApiUrl, API_ENDPOINTS } from '../../../lib/config'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,64 +12,50 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Spawn the Python process with the correct path
-    const pythonProcess = spawn("python", ["../agent/quiz_agent.py"], {
-      stdio: ["pipe", "pipe", "pipe"]
+    // Make request to hosted Render API
+    const apiUrl = getApiUrl(API_ENDPOINTS.QUIZ)
+    console.log("Making request to:", apiUrl)
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        flashcards
+      }),
     })
 
-    // Send the flashcards JSON to the Python script
-    pythonProcess.stdin.write(Buffer.from(JSON.stringify({ flashcards }) + "\n", "utf-8"))
-    pythonProcess.stdin.end()
-
-    // Collect the output
-    let output = ""
-    let error = ""
-
-    pythonProcess.stdout.on("data", (data) => {
-      const chunk = data.toString("utf-8")
-      console.log("Python stdout:", chunk)
-      output += chunk
-    })
-
-    pythonProcess.stderr.on("data", (data) => {
-      const chunk = data.toString("utf-8")
-      console.error("Python stderr:", chunk)
-      error += chunk
-    })
-
-    // Wait for the process to complete
-    await new Promise((resolve, reject) => {
-      pythonProcess.on("close", (code) => {
-        console.log(`Python process exited with code ${code}`)
-        if (code === 0) {
-          resolve(null)
-        } else {
-          reject(new Error(`Python process exited with code ${code}. Error: ${error}`))
-        }
-      })
-    })
-
-    if (!output) {
-      throw new Error("No output received from Python process")
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error("API request failed:", response.status, errorData)
+      return NextResponse.json(
+        { 
+          error: "Failed to generate quiz from hosted API",
+          details: `HTTP ${response.status}: ${errorData}`
+        },
+        { status: response.status }
+      )
     }
 
-    // Parse the output as JSON
-    try {
-      // Find the first occurrence of a JSON object in the output
-      const jsonMatch = output.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error("No JSON object found in output")
-      }
-      const quiz = JSON.parse(jsonMatch[0])
-      return NextResponse.json(quiz)
-    } catch (e) {
-      console.error("Failed to parse Python output as JSON:", output)
-      throw new Error("Invalid JSON response from Python process")
+    const data = await response.json()
+    console.log("API response received:", data)
+
+    if (data.error) {
+      return NextResponse.json(
+        { error: data.error, details: data.details },
+        { status: 500 }
+      )
     }
+
+    return NextResponse.json(data)
   } catch (error) {
     console.error("Error generating quiz:", error)
     return NextResponse.json(
-      { error: "Failed to generate quiz", details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: "Failed to generate quiz", 
+        details: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     )
   }

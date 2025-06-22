@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { spawn } from "child_process";
+import { getApiUrl, API_ENDPOINTS } from '../../../../lib/config';
 import { promises as fs } from "fs";
 import path from "path";
 import os from "os";
@@ -19,58 +19,61 @@ export async function POST(req: NextRequest) {
 
     const sanitizedFileName = path.basename(file.name);
     const inputFilePath = path.join(tempDir, sanitizedFileName);
-    const outputPdfPath = path.join(tempDir, `highlighted-${sanitizedFileName}`);
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(inputFilePath, fileBuffer);
 
-    const scriptPath = path.resolve(process.cwd(), "../agent/highlighter.py");
-    
-    // Check if the script exists
-    try {
-        await fs.access(scriptPath);
-    } catch (error) {
-        console.error(`Python script not found at ${scriptPath}`);
-        return NextResponse.json({ error: "Internal server error: script not found" }, { status: 500 });
+    // Make request to hosted Render API
+    const apiUrl = getApiUrl(API_ENDPOINTS.HIGHLIGHT_PDF);
+    console.log("Making request to:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pdfPath: inputFilePath
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("API request failed:", response.status, errorData);
+      return NextResponse.json(
+        { 
+          error: "Failed to highlight PDF from hosted API",
+          details: `HTTP ${response.status}: ${errorData}`
+        },
+        { status: response.status }
+      );
     }
 
-    await new Promise<void>((resolve, reject) => {
-      const pythonProcess = spawn("python", [
-        scriptPath,
-        inputFilePath,
-        outputPdfPath,
-      ]);
+    const data = await response.json();
+    console.log("API response received:", data);
 
-      pythonProcess.stdout.on("data", (data) => {
-        console.log(`python stdout: ${data}`);
-      });
+    if (data.error) {
+      return NextResponse.json(
+        { error: data.error, details: data.details },
+        { status: 500 }
+      );
+    }
 
-      pythonProcess.stderr.on("data", (data) => {
-        console.error(`python stderr: ${data}`);
-      });
-
-      pythonProcess.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`Python script exited with code ${code}`));
-        }
-      });
-    });
-
-    const highlightedPdfBuffer = await fs.readFile(outputPdfPath);
-
-    return new NextResponse(highlightedPdfBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="highlighted.pdf"`,
+    // For now, return a placeholder response since the hosted API doesn't support file uploads yet
+    return NextResponse.json(
+      { 
+        message: "PDF highlighting endpoint - file upload support needed in hosted API",
+        status: "not_implemented"
       },
-    });
+      { status: 501 }
+    );
   } catch (error) {
     console.error("Error highlighting PDF:", error);
     return NextResponse.json(
-      { error: "Failed to highlight PDF" },
+      { 
+        error: "Failed to highlight PDF",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   } finally {
