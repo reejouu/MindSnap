@@ -17,10 +17,5 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "frontend/app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
   }
 } 
