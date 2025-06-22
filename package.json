@@ -1,0 +1,43 @@
+{
+  "name": "mindsnap",
+  "version": "1.0.0",
+  "description": "MindSnap - AI-powered learning platform with battle quizzes and blockchain rewards",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "agent",
+    "web3"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "dev:all": "npm run dev:all --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "start": "npm run start --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend",
+    "install:all": "npm install",
+    "clean": "npm run clean --workspaces --if-present",
+    "build:all": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/mindsnap.git"
+  },
+  "keywords": [
+    "ai",
+    "learning",
+    "quiz",
+    "blockchain",
+    "education",
+    "flashcards"
+  ],
+  "author": "MindSnap Team",
+  "license": "MIT"
+} 
