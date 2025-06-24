@@ -1,147 +1,116 @@
-# MindSnap
+# ⚡ MindSnap — Learn Fast. Win Faster.
 
-MindSnap is a next-generation, community-powered learning platform that gamifies education and rewards top performers. By integrating interactive quizzes, dynamic leaderboards, and blockchain-based incentives, MindSnap creates an engaging environment where users are motivated to learn, compete, and grow together.
+**MindSnap** is a community-powered **microlearning platform** built for the next generation of learners — fast-paced, short-attention, always-on.  
 
-![alt text](images/image.png)
+We bridge the widening gap between **quality educational content** and the modern-day consumption habit formed by short-form content like Reels, Shorts, and TikToks. 
+
+Using **AI**, **gamification**, and **Web3 rewards**, MindSnap makes learning addictive, engaging, and rewarding.
+<br><br>
+
+![Hero](images/image.png)
+<br><br>
+
+## 🚀 Features
+
+### 📥 Upload Anything  
+Drop in a **YouTube link**, **PDF**, **image**, **voice**, or **raw text** — MindSnap transforms it into a deck of engaging, AI-powered flashcards within seconds.
+
+
+### 🎭 Choose Your Vibe  
+Customize your learning tone by selecting a flashcard style:  
+- **Factual** – Straight to the point  
+- **Conceptual** – Deep dive into logic  
+- **Story Mode** – Learn through narratives  
+- **Gen Z** – Fun, casual, and relatable  
+
+
+### 📄 Smart PDF Highlighting  
+Upload a PDF and let our **ML model automatically highlight key lines**, ranked by confidence score, helping you scan only what matters most.
+
+
+### 🔍 Focus Mode on Flashcards  
+Every flashcard comes with an **AI-powered Focus Mode** — just ask the AI to:  
+- **Explain** complex terms  
+- **Summarize** long definitions  
+- **Elaborate** on key concepts  
+- **Translate** (supports Hindi, Bengali, and more)
+
+
+### 🧪 Auto-Generated Quizzes  
+Once flashcards are created, quizzes are **automatically generated** for each topic.  
+Your quiz score:  
+- Is saved in our database  
+- **Dynamically updates** your leaderboard position  
+
+
+### ⚔️ 1v1 Quiz Battle Royale  
+Step into real-time competition with MindSnap's signature battle mode:  
+- Create or join a **private quiz room** using a unique code  
+- Invite friends to compete in **fast-paced 1v1 duels**  
+- **Earn points, boost your rank**, and win token rewards  
+
+
+### 🏆 Leaderboards & Blockchain Rewards  
+- **Live Leaderboards** track top performers (weekly & monthly)  
+- **Hall of Fame** features the best learners on a visual podium  
+- **Token Rewards** sent directly to your connected crypto wallet  
+
+> 💡 **Smart Contract deployed on Base Sepolia:**  
+> [`0x0275e553e47c4f11074bdFe4651164b98906c0F4`](https://sepolia.basescan.org/address/0x0275e553e47c4f11074bdFe4651164b98906c0F4)
+
+
+### 👤 User Profiles  
+View your rank, stats, quiz history, and wallet — all in one place.
+
+
+### 🔐 Secure Authentication  
+Powered by **Civic Auth**, ensuring secure logins and private, Web3-ready sessions.
+
 ---
+## 🧭 How It All Works
 
-## Workflow
-
-The following diagram illustrates the workflow of the project:
+A snapshot of the entire workflow, from upload to leaderboard:
 
 ![Workflow](images/workflow.png)
 
----
+## ⚙️ Installation & Running Guide
 
-## Features
-
-- **Interactive Quizzes:**  
-  MindSnap offers a diverse set of quizzes across multiple subjects and difficulty levels. Each quiz is designed to challenge users and help them expand their knowledge base in a fun, interactive way.
-
-- **Real-Time Leaderboards:**  
-  The platform features both weekly and monthly leaderboards, allowing users to track their progress and see how they stack up against others in the community. Leaderboards update instantly as users complete quizzes and earn points.
-
-- **User Profiles & Stats:**  
-  Every user has a personalized profile displaying their name, wallet address, rank, and performance statistics. This transparency fosters healthy competition and personal accountability.
-
-- **Blockchain-Based Rewards:**  
-  Top learners are rewarded with tokens sent directly to their crypto wallets. The reward system is automated and transparent, leveraging blockchain technology to ensure fairness and security.
-
-- **Hall of Fame:**  
-  The Hall of Fame section highlights the top three performers in a visually distinct podium, celebrating their achievements and inspiring others to reach the top.
-
-- **Responsive & Modern UI:**  
-  Built with React and Tailwind CSS, MindSnap provides a seamless experience across devices, with visually appealing gradients, animations, and intuitive navigation.
-
-- **Secure Authentication:**  
-  User authentication and session management are implemented to protect user data and ensure a safe learning environment.
+### 🔧 Prerequisites
+- Node.js (v18+)
+- Python (v3.10+)
+- Git
+- npm or yarn
 
 ---
 
-## How MindSnap Works
-
-MindSnap is designed to make learning both rewarding and competitive:
-
-1. **User Journey:**  
-   Users sign up and create a profile. Once authenticated, they can participate in quizzes, each contributing to their overall score.
-
-2. **Quiz Mechanics:**  
-   Quizzes are dynamically loaded and scored in real-time. The system tracks attempts, correct answers, and time taken, ensuring a fair assessment of each user's performance.
-
-3. **Leaderboard Calculation:**  
-   As users complete quizzes, their scores are aggregated and ranked. The leaderboards (weekly and monthly) are updated live, reflecting the most recent activity and performance.
-
-4. **Reward Distribution:**  
-   At the end of each leaderboard cycle, the top-ranked users are eligible to claim blockchain-based rewards. The platform integrates with wallet services to securely distribute tokens, with a dedicated claim interface for winners.
-
-5. **Recognition & Motivation:**  
-   The Hall of Fame and user profile stats provide ongoing motivation, while the competitive structure encourages consistent participation and improvement.
-
----
-
-
-## Installation & Setup
-
-Follow these steps to set up MindSnap locally:
-
-### Tech Stack
-- **Node.js** (v18 or higher recommended)
-- **npm** or **yarn**
-- **Python** (v3.10+)
-- **MongoDB** (local or cloud instance)
-
-### 1. Clone the Repository
+### 1. Clone the Repo
 ```bash
 git clone <your-repo-url>
 cd MindSnap
 ```
-
-### 2. Backend Setup (Python)
+### 2. Set Up Python Backend
 ```bash
 cd agent
-# (Optional but recommended) Create a virtual environment:
 python -m venv venv
-# Activate the virtual environment:
-# On Windows:
+# Windows:
 venv\Scripts\activate
-# On macOS/Linux:
+# macOS/Linux:
 source venv/bin/activate
-
-# Install dependencies:
 pip install -r requirements.txt
 ```
-
-### 3. Frontend Setup (Next.js)
+### 3. Set Up Frontend
 ```bash
+cd frontend
+npm install
+cp .env.example .env.local
+```
+### 4. Running the App
+```bash
+# Start Backend
+cd agent
+python app.py
+
+# Start Frontend
 cd ../frontend
-# Install dependencies:
-npm install
-# or
-# yarn install
-
-# Start the development server:
 npm run dev
-# or
-yarn dev
 ```
-
-### 4. MongoDB Setup
-- Ensure MongoDB is running locally or provide a connection string to a cloud instance (e.g., MongoDB Atlas).
-- Update the MongoDB connection string in the appropriate config file (e.g., `frontend/app/config.ts` or `.env.local`).
-
-### 5. (Optional) Smart Contract/Blockchain Setup
-If you want to work with blockchain rewards:
-```bash
-cd ../web3
-# Install dependencies:
-npm install
-# Compile contracts:
-npx hardhat compile
-# (Optional) Deploy contracts to local/testnet:
-npx hardhat run scripts/deploy.js --network <network>
-```
-
----
-
-**Now you can access the frontend at** `http://localhost:3000` **and interact with the platform!**
-
-For any issues, please refer to the documentation or open an issue.
-
----
-
-## Future Scope
-
-MindSnap aims to continuously evolve with the following potential enhancements:
-
-- **AI-Powered Personalized Learning Paths:**
-  Adaptive recommendations and content tailored to individual learning styles and progress.
-- **Mobile App Integration:**
-  Native apps for iOS and Android to expand accessibility and engagement.
-- **Expanded Blockchain Features:**
-  NFT-based achievements, decentralized identity, and cross-platform token rewards.
-- **Social & Collaborative Learning:**
-  Group challenges, peer-to-peer tutoring, and community-driven content creation.
-- **Advanced Analytics:**
-  Deeper insights for users and educators to track learning outcomes and optimize strategies.
-
----
