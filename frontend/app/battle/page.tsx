@@ -270,10 +270,11 @@ export default function BattleRoyalePage() {
       <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} showSidebarToggle={false} />
 
       <div className="container mx-auto px-6 py-8 max-w-4xl">
-        {/* Header - Only show on mode-selection */}
-        <AnimatePresence>
+        {/* Header and Back Button */}
+        <AnimatePresence mode="wait">
           {battleState === "mode-selection" && (
             <motion.div
+              key="header-mode-selection"
               className="text-center mb-12"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -296,12 +297,10 @@ export default function BattleRoyalePage() {
               </p>
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* Back Button */}
-        <AnimatePresence>
           {battleState !== "mode-selection" && (
             <motion.div
+              key="back-button"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -403,7 +402,7 @@ export default function BattleRoyalePage() {
 
           {battleState === "vs-intro" && opponent && (
             <motion.div
-              key={`vs-intro-${roomId}`}
+              key={`vs-intro-${roomId || 'default'}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -438,18 +437,25 @@ export default function BattleRoyalePage() {
           )}
 
           {battleState === "battle-quiz" && quiz && (
-            <BattleQuiz
-              quiz={quiz}
-              battleId={roomId}
-              currentUserId={currentPlayer.id}
-              currentUsername={currentPlayer.name}
-              opponentCompleted={opponentCompletedStatus}
-              onQuizComplete={(score, totalQuestions) => {
-                console.log("🎯 Quiz completed with score:", score, "/", totalQuestions)
-                setQuizCompleted(true)
-                setQuizScore({ score, totalQuestions })
-              }}
-            />
+            <motion.div
+              key={`battle-quiz-${roomId || 'default'}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <BattleQuiz
+                quiz={quiz}
+                battleId={roomId}
+                currentUserId={currentPlayer.id}
+                currentUsername={currentPlayer.name}
+                opponentCompleted={opponentCompletedStatus}
+                onQuizComplete={(score, totalQuestions) => {
+                  console.log("🎯 Quiz completed with score:", score, "/", totalQuestions)
+                  setQuizCompleted(true)
+                  setQuizScore({ score, totalQuestions })
+                }}
+              />
+            </motion.div>
           )}
 
           {/* Battle Results Modal */}
