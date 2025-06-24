@@ -689,6 +689,11 @@ export default function Dashboard({
         body: formData,
       })
 
+      if (response.status === 501) {
+        toast.error("PDF highlighting is not available yet. Please try again later.")
+        return
+      }
+
       if (!response.ok) {
         throw new Error("Failed to highlight PDF")
       }

@@ -60,6 +60,15 @@ export default function Leaderboard({
     hash,
   })
 
+  // Load claimed status from localStorage on component mount
+  useEffect(() => {
+    if (address) {
+      const claimedKey = `reward_claimed_${address.toLowerCase()}_${activeTab}`
+      const claimed = localStorage.getItem(claimedKey) === 'true'
+      setHasClaimed(claimed)
+    }
+  }, [address, activeTab])
+
   useEffect(() => {
     console.log("isSuccess changed:", isSuccess)
     console.log("hash:", hash)
@@ -69,8 +78,14 @@ export default function Leaderboard({
       console.log("Transaction successful! Showing popup")
       setShowRewardPopup(true)
       setHasClaimed(true)
+      
+      // Persist claimed status to localStorage
+      if (address) {
+        const claimedKey = `reward_claimed_${address.toLowerCase()}_${activeTab}`
+        localStorage.setItem(claimedKey, 'true')
+      }
     }
-  }, [isSuccess, hash, isConfirming, hasClaimed])
+  }, [isSuccess, hash, isConfirming, hasClaimed, address, activeTab])
 
   // Additional effect to handle hash changes
   useEffect(() => {
@@ -82,10 +97,16 @@ export default function Leaderboard({
           console.log("Manually triggering popup due to hash confirmation")
           setShowRewardPopup(true)
           setHasClaimed(true)
+          
+          // Persist claimed status to localStorage
+          if (address) {
+            const claimedKey = `reward_claimed_${address.toLowerCase()}_${activeTab}`
+            localStorage.setItem(claimedKey, 'true')
+          }
         }
       }, 1000)
     }
-  }, [hash, isConfirming, isPending, showRewardPopup, hasClaimed])
+  }, [hash, isConfirming, isPending, showRewardPopup, hasClaimed, address, activeTab])
 
   // Debug function to manually test popup
   const testPopup = () => {
@@ -407,12 +428,25 @@ export default function Leaderboard({
                   {currentUser.rank === 1 && (
                     <Button
                       onClick={handleClaimReward}
-                      disabled={isPending || isConfirming}
-                      className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black font-semibold shadow-md hover:shadow-xl hover:from-yellow-500 hover:to-yellow-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400/50"
+                      disabled={isPending || isConfirming || hasClaimed}
+                      className={`group relative inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-2 ${
+                        hasClaimed
+                          ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed opacity-75"
+                          : "bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black hover:shadow-xl hover:from-yellow-500 hover:to-yellow-700 hover:scale-105 focus:ring-yellow-400/50"
+                      }`}
                     >
-                      <Award className="w-5 h-5 text-black group-hover:scale-110 transition-transform duration-300" />
+                      {hasClaimed ? (
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      ) : (
+                        <Award className="w-5 h-5 text-black group-hover:scale-110 transition-transform duration-300" />
+                      )}
                       <span className="tracking-wide">
-                        {isPending || isConfirming ? "Claiming..." : "Claim Your Tokens"}
+                        {hasClaimed 
+                          ? "Reward Claimed" 
+                          : isPending || isConfirming 
+                            ? "Claiming..." 
+                            : "Claim Your Tokens"
+                        }
                       </span>
                     </Button>
                   )}
