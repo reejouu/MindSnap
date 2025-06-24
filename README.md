@@ -1,4 +1,4 @@
-# ⚡ MindSnap — Learn Fast. Win Faster.
+# ⚡MindSnap — Short attention? Meet smart learning.
 
 **MindSnap** is a community-powered **microlearning platform** built for the next generation of learners — fast-paced, short-attention, always-on.  
 
@@ -13,60 +13,51 @@ Using **AI**, **gamification**, and **Web3 rewards**, MindSnap makes learning ad
 ## 🚀 Features
 
 ### 📥 Upload Anything  
-Drop in a **YouTube link**, **PDF**, **image**, **voice**, or **raw text** — MindSnap transforms it into a deck of engaging, AI-powered flashcards within seconds.
-
+Feed in **YouTube links, PDFs, images, audio**, or **plain text** — MindSnap transforms any format into concise, swipeable flashcards in seconds.
 
 ### 🎭 Choose Your Vibe  
-Customize your learning tone by selecting a flashcard style:  
-- **Factual** – Straight to the point  
-- **Conceptual** – Deep dive into logic  
-- **Story Mode** – Learn through narratives  
-- **Gen Z** – Fun, casual, and relatable  
+Make learning match your mood. Select your preferred style:  
+- **Factual** – Crisp and to-the-point  
+- **Conceptual** – Logical and in-depth  
+- **Story Mode** – Narrative-driven learning  
+- **Gen Z** – Casual, quirky, and relatable
 
+### 📄 Intelligent PDF Highlighting  
+Upload a PDF and receive a **cleanly highlighted version**, with key content auto-selected by our ML model using **confidence-based ranking** — ideal for revision and focus.
 
-### 📄 Smart PDF Highlighting  
-Upload a PDF and let our **ML model automatically highlight key lines**, ranked by confidence score, helping you scan only what matters most.
-
-
-### 🔍 Focus Mode on Flashcards  
-Every flashcard comes with an **AI-powered Focus Mode** — just ask the AI to:  
-- **Explain** complex terms  
-- **Summarize** long definitions  
-- **Elaborate** on key concepts  
-- **Translate** (supports Hindi, Bengali, and more)
-
+### 🔍 Flashcard Focus Mode  
+Each card unlocks a mini AI assistant. Ask it to:  
+- **Explain** difficult concepts  
+- **Summarize** dense info  
+- **Expand** on short answers  
+- **Translate** content into Hindi, Bengali, or any major language
 
 ### 🧪 Auto-Generated Quizzes  
-Once flashcards are created, quizzes are **automatically generated** for each topic.  
-Your quiz score:  
-- Is saved in our database  
-- **Dynamically updates** your leaderboard position  
+After every flashcard set, MindSnap builds a tailored quiz. Your score is:  
+- **Stored automatically**  
+- **Synced live** to your leaderboard rank
 
+### ⚔️ 1v1 Real-Time Quiz Battles  
+Challenge your friends in **private quiz arenas**:  
+- Share a unique room code  
+- Face off in **fast-paced, real-time duels**  
+- Earn **XP, ranks, and token rewards** — bragging rights included
 
-### ⚔️ 1v1 Quiz Battle Royale  
-Step into real-time competition with MindSnap's signature battle mode:  
-- Create or join a **private quiz room** using a unique code  
-- Invite friends to compete in **fast-paced 1v1 duels**  
-- **Earn points, boost your rank**, and win token rewards  
+### 🏆 Leaderboards & Token Rewards  
+- 📈 **Live leaderboards** (weekly & monthly)  
+- 🏅 **Hall of Fame** with top performers spotlighted  
+- 🎉 **Token rewards** sent directly to your wallet
 
-
-### 🏆 Leaderboards & Blockchain Rewards  
-- **Live Leaderboards** track top performers (weekly & monthly)  
-- **Hall of Fame** features the best learners on a visual podium  
-- **Token Rewards** sent directly to your connected crypto wallet  
-
-> 💡 **Smart Contract deployed on Base Sepolia:**  
+> 💡 **Smart Contract deployed on Base Sepolia**  
 > [`0x0275e553e47c4f11074bdFe4651164b98906c0F4`](https://sepolia.basescan.org/address/0x0275e553e47c4f11074bdFe4651164b98906c0F4)
 
-
 ### 👤 User Profiles  
-View your rank, stats, quiz history, and wallet — all in one place.
-
+Stay on top of your learning journey with real-time **stats, rank, quiz history**, and **wallet activity** — all in one place.
 
 ### 🔐 Secure Authentication  
-Powered by **Civic Auth**, ensuring secure logins and private, Web3-ready sessions.
+Seamless login with **Civic Auth**, ensuring your sessions are **safe**, **private**, and **Web3-compatible**.
 
----
+ ---
 ## 🧭 How It All Works
 
 A snapshot of the entire workflow, from upload to leaderboard:
